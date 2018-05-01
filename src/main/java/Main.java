@@ -20,21 +20,20 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
+import java.net.URL;
+
 public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("fxml/splash.fxml"));
 
+        System.out.println(getClass().getResource("/fxml/createAccount.fxml"));
+        System.out.println(getClass().getResource("/fxml/splash.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("/fxml/splash.fxml"));
         primaryStage.setScene(new Scene(root, 400, 200));
         primaryStage.show();
+
     }
-
-
-
-
-
-
 
     public static void main(String[] args){
         launch(args);

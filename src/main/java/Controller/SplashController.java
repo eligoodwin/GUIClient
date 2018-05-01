@@ -18,7 +18,7 @@ public class SplashController {
     public void gotoAccountCreation(ActionEvent actionEvent) throws Exception {
         Node source = (Node) actionEvent.getSource();
         Stage theStage = (Stage)source.getScene().getWindow();
-        Parent root = FXMLLoader.load(getClass().getResource("createAccount.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("/fxml/createAccount.fxml"));
         Scene logonScene = new Scene(root, 400, 200);
         theStage.setScene(logonScene);
         System.out.println("logon was clicked");
@@ -28,7 +28,7 @@ public class SplashController {
     public void logon(ActionEvent actionEvent) throws IOException {
         Node source = (Node) actionEvent.getSource();
         Stage theStage = (Stage)source.getScene().getWindow();
-        Parent root = FXMLLoader.load(getClass().getResource("logon.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("/fxml/logon.fxml"));
         Scene logonScene = new Scene(root, 400, 200);
         theStage.setScene(logonScene);
         System.out.println("logon was clicked");
