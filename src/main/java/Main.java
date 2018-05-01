@@ -24,7 +24,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("splash.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("fxml/splash.fxml"));
 
         primaryStage.setScene(new Scene(root, 400, 200));
         primaryStage.show();
