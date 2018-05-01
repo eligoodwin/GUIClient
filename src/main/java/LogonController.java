@@ -1,6 +1,6 @@
 import javafx.event.ActionEvent;
 
-public class Controller {
+public class LogonController {
     public void gotoNextPage(ActionEvent actionEvent) {
     }
 }
