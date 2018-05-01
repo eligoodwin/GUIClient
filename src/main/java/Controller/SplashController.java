@@ -1,3 +1,5 @@
+package Controller;
+
 import com.sun.tools.hat.internal.model.Root;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;

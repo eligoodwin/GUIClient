@@ -1,7 +1,7 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.control.Button?>
-<GridPane fx:controller="SplashController" xmlns:fx="http://javafx.com/fxml">
+<GridPane fx:controller="Controller.SplashController" xmlns:fx="http://javafx.com/fxml">
     <Text text="Welcome To Chat Fun"
           GridPane.rowIndex="0"
           GridPane.columnIndex="0"
