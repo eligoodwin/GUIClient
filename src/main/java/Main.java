@@ -1,4 +1,5 @@
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -15,6 +16,8 @@ public class Main extends Application {
         Parent root = FXMLLoader.load(getClass().getResource("/fxml/splash.fxml"));
         primaryStage.setScene(new Scene(root, 400, 200));
         primaryStage.show();
+
+        primaryStage.setOnCloseRequest(e -> Platform.exit());
 
     }
 
