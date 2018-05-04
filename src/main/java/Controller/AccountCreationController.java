@@ -31,7 +31,7 @@ public class AccountCreationController {
             client.addUser(user);
         } catch (IOException e) {
             e.printStackTrace();
-            //TODO: needs a route to re-try
+            //TODO: needs a route to re-try (pop up message?)
             System.out.println("Could not create user... exception encountered");
         }
         System.out.printf("Text user: %s%n", createUsername.getText());

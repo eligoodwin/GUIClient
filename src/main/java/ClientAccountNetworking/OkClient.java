@@ -5,7 +5,9 @@ package ClientAccountNetworking;
 import java.io.IOException;
 
 import QueryObjects.FriendData;
+import QueryObjects.ResponseMsg;
 import QueryObjects.UserData;
+import Util.JSONhelper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.squareup.okhttp.MediaType;
@@ -17,6 +19,7 @@ import com.squareup.okhttp.Response;
 import static ClientAccountNetworking.QueryObjectsHelper.getLogon;
 
 public class OkClient {
+    private final static String GOOD_RES = "VALID REQUEST";
     private final static String API_TOKEN = "fXtas7yB2HcIVoCyyQ78";
     public static Gson gson = new Gson();
     //Source: https://stackoverflow.com/questions/4802887/gson-how-to-exclude-specific-fields-from-serialization-without-annotations
@@ -40,25 +43,29 @@ public class OkClient {
         return response.body().string();
     }
     //TODO: don't need UserLogon, can just use UserData
+    //RES: {"message" : {"authToken" : "testToken"}, "status" : "VALID REQUEST"}
     public String logon(UserData user) throws IOException {
-        UserData usr = getLogon();
-        usr.API_token = API_TOKEN;
-        String json = gson.toJson(usr);
+        String ret = "Error";
+        user.API_token = API_TOKEN;
+        String json = gson.toJson(user);
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
                 .url(url + "/logon")
                 .post(body)
                 .build();
         Response response = client.newCall(request).execute();
-        UserData user = new UserData();
-        user.username = usr.username;
-        user.password = usr.password;
         int status = response.code();
         if (status >= 200 && status < 400) {
             String res = response.body().string();
-            user.token = res;
+            System.out.println(res);
+            ResponseMsg resObj = gson.fromJson(res, ResponseMsg.class);
+            ret = resObj.status;
+            if (ret.equals(GOOD_RES)) {
+                user.token = resObj.message.get("authToken").toString();
+            }
+            //TODO: retry route
         }
-        return user;
+        return ret;
     }
 
     public String sendPost(String msg) throws IOException{

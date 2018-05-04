@@ -1,6 +1,7 @@
 package QueryObjects;
 
 import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
 public class UserData {
     //@Expose allows us to ignore fields without expose in creating some requests
@@ -17,6 +18,7 @@ public class UserData {
     public String peerServerPort = "9001";
     public String token = "";
     @Expose
+    @SerializedName("API token")
     public String API_token = "";
     //TODO: change user id
     public long id = 3;
