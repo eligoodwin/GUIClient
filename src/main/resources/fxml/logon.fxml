@@ -22,7 +22,8 @@
     />
 
 
-    <TextField GridPane.rowIndex="1"
+    <TextField fx:id="logonUsername"
+               GridPane.rowIndex="1"
                GridPane.columnIndex="1"
     />
 
@@ -32,6 +33,7 @@
     />
 
     <PasswordField
+            fx:id="logonPassword"
             GridPane.columnIndex="1"
             GridPane.rowIndex="2"
     />

@@ -40,7 +40,7 @@ public class OkClient {
         return response.body().string();
     }
     //TODO: don't need UserLogon, can just use UserData
-    public UserData logon() throws IOException {
+    public String logon(UserData user) throws IOException {
         UserData usr = getLogon();
         usr.API_token = API_TOKEN;
         String json = gson.toJson(usr);
