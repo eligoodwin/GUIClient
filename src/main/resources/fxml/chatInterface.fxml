@@ -8,6 +8,7 @@
 <Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/9.0.4" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.ChatInterface">
 <children>
     <TextField
+            fx:id="messageToSend"
             layoutX="14.0"
             layoutY="333.0"
             prefHeight="53.0"
@@ -16,12 +17,14 @@
 
     <TextArea
             fx:id="messageWindow"
+            wrapText="true"
             layoutX="14.0"
             layoutY="14.0"
             prefHeight="302.0"
             prefWidth="469.0"
             promptText="incoming messages" />
     <Button
+            fx:id="sendButton"
             layoutX="491.0"
             layoutY="333.0"
             onAction="#sendMessage"
