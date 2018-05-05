@@ -6,6 +6,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
 
 import java.util.Random;
 
@@ -19,6 +20,7 @@ public class ChatInterface {
 
     @FXML
     public void initialize(){
+        //start jaden bot thread
         this.jadenSmithBot = new JadenSmithBot();
         this.jadenBotThread = new Thread( () -> {
             Random random = new Random();
@@ -33,6 +35,13 @@ public class ChatInterface {
             }
         });
         jadenBotThread.start();
+
+        messageToSend.setOnKeyPressed( event -> {
+            if(!messageToSend.getText().isEmpty() && event.getCode() ==KeyCode.ENTER){
+               sendMessageToWindow(userIsSource(messageToSend.getText()));
+               messageToSend.clear();
+            }
+        });
     }
 
     public void exitProgram(ActionEvent actionEvent) {
