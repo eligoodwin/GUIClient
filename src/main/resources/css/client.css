@@ -1,0 +1,8 @@
+.header{
+    -fx-font-size: 20px;
+}
+
+.buttonBox{
+    -fx-vgap: 10;
+    -fx-hgap: 10;
+}

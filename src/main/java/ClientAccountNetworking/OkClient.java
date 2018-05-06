@@ -3,8 +3,10 @@
 package ClientAccountNetworking;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import QueryObjects.FriendData;
+import QueryObjects.ResponseArray;
 import QueryObjects.ResponseMsg;
 import QueryObjects.UserData;
 import Util.JSONhelper;
@@ -17,6 +19,7 @@ import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
 import static ClientAccountNetworking.QueryObjectsHelper.getLogon;
+import static java.lang.Integer.parseInt;
 
 public class OkClient {
     private final static String GOOD_RES = "VALID REQUEST";
@@ -62,6 +65,7 @@ public class OkClient {
             ret = resObj.status;
             if (ret.equals(GOOD_RES)) {
                 user.token = resObj.message.get("authToken").toString();
+                user.id = Long.parseLong(resObj.message.get("id").toString());
             }
             //TODO: retry route
         }
@@ -90,6 +94,7 @@ public class OkClient {
                 .post(body)
                 .build();
         Response response = client.newCall(request).execute();
+        //TODO: this may need to be updated for the new message format
         json = response.body().string();
         UserData tempUser = gson.fromJson(json, UserData.class);
         user.token = tempUser.token;
@@ -139,19 +144,32 @@ public class OkClient {
     }
 
     //TODO: update return type when determined how to parse code
-    public String getFriends(UserData current) throws IOException {
-        if (url == "") return "";
+    public String getFriends(UserData current, ArrayList<FriendData> friends) throws IOException {
+        if (url == "") return "No URL";
         Request request = new Request.Builder()
                 .url(url + "/user/" + current.id + "/friend")
                 .build();
         Response response = client.newCall(request).execute();
         int status = response.code();
         if (status >= 200 && status < 400) {
-            String out = response.body().string();
-            System.out.println(out);
-            return out;
+            String res = response.body().string();
+            System.out.println(res); //TODO: trace
+            ResponseArray resObj = gson.fromJson(res, ResponseArray.class);
+            res = resObj.status;
+            FriendData[] tempFrnds;
+            tempFrnds = gson.fromJson(resObj.message, FriendData[].class);
+            if (tempFrnds != null && tempFrnds.length > 0){
+                for (FriendData fr : tempFrnds) friends.add(fr);
+            }
+            return res;
         }
-        return "";
+        else{
+            String res = response.body().string();
+            ResponseArray resObj = gson.fromJson(res, ResponseArray.class);
+            System.out.println(res);
+            res = resObj.status;
+            return res;
+        }
     }
 
     public String updateIP(UserData current) throws IOException{

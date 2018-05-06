@@ -20,7 +20,7 @@ public class LogonController {
     private TextField logonUsername;
     @FXML
     private PasswordField logonPassword;
-    public void gotoNextPage(ActionEvent actionEvent) {
+    public void gotoNextPage(ActionEvent actionEvent) throws Exception{
         UserData user = new UserData();
         user.username = logonUsername.getText();
         user.password = logonPassword.getText();
@@ -34,6 +34,22 @@ public class LogonController {
             //TODO: re-try route (pop up message?)
         }
         System.out.println("Logon controller clicked");
+        Node source = (Node) actionEvent.getSource();
+        Stage theStage = (Stage)source.getScene().getWindow();
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
+        Parent root = loader.<Parent>load();
+        if (root == null) System.out.println("Root is null");
+        else {
+            System.out.println("Parent is not null");
+        }
+        FriendsController controller = loader.<FriendsController>getController();
+        if (controller == null) System.out.println("Controller is null");
+        else{
+            System.out.println("Controller is not null");
+            controller.initData(user);
+        }
+        Scene friendsScene = new Scene(root, 200, 600);
+        theStage.setScene(friendsScene);
     }
 
         /*
