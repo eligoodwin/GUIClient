@@ -5,22 +5,63 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="556.0" prefWidth="300.0" stylesheets="/css/client.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.FriendsController">
+<Pane
+        maxHeight="-Infinity"
+        maxWidth="-Infinity"
+        minHeight="-Infinity"
+        minWidth="-Infinity"
+        prefHeight="556.0"
+        prefWidth="300.0"
+        stylesheets="/css/client.css"
+        xmlns="http://javafx.com/javafx/8.0.121"
+        xmlns:fx="http://javafx.com/fxml/1"
+        fx:controller="Controller.FriendsController">
 
    <children>
-      <ScrollPane layoutX="11.0" layoutY="34.0" prefHeight="387.0" prefWidth="279.0">
+      <ScrollPane
+              layoutX="11.0"
+              layoutY="34.0"
+              prefHeight="387.0"
+              prefWidth="279.0">
          <content>
-            <ListView fx:id="friendsList"
-                      prefHeight="386.0"
-                      prefWidth="263.0" />
+            <ListView
+                    fx:id="friendsList"
+                    prefHeight="386.0"
+                    prefWidth="263.0" />
          </content></ScrollPane>
 
-      <VBox alignment="CENTER" layoutX="11.0" layoutY="429.0" prefHeight="113.0" prefWidth="279.0" styleClass="buttonBox">
+      <VBox
+              alignment="CENTER"
+              layoutX="11.0"
+              layoutY="429.0"
+              prefHeight="113.0"
+              prefWidth="279.0"
+              styleClass="buttonBox">
          <children>
-            <Button alignment="CENTER" mnemonicParsing="false" prefHeight="48.0" prefWidth="257.0" text="Send Message" />
-            <Button alignment="CENTER" prefHeight="48.0" prefWidth="257.0" text="Add Friend" />
+            <Button
+                    fx:id="friendsMsg"
+                    onAction="#msgFriend"
+                    alignment="CENTER"
+                    mnemonicParsing="false"
+                    prefHeight="48.0"
+                    prefWidth="257.0"
+                    text="Send Message" />
+            <Button
+                    fx:id="friendsAdd"
+                    onAction="#addFriend"
+                    alignment="CENTER"
+                    prefHeight="48.0"
+                    prefWidth="257.0"
+                    text="Add Friend" />
          </children>
       </VBox>
+      <Text
+              layoutX="14.0"
+              layoutY="27.0"
+              strokeType="OUTSIDE"
+              strokeWidth="0.0"
+              text="Friends" />
    </children>
 </Pane>

@@ -12,6 +12,7 @@ import QueryObjects.UserData;
 import Util.JSONhelper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -24,13 +25,14 @@ import static java.lang.Integer.parseInt;
 public class OkClient {
     private final static String GOOD_RES = "VALID REQUEST";
     private final static String API_TOKEN = "fXtas7yB2HcIVoCyyQ78";
+    private final static String SERVER_ADDRESS = "http://localhost:8080";
     public static Gson gson = new Gson();
     //Source: https://stackoverflow.com/questions/4802887/gson-how-to-exclude-specific-fields-from-serialization-without-annotations
     public static Gson exGson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
     public static final MediaType JSON
             = MediaType.parse("application/json; charset=utf-8");
-    private OkHttpClient client;
-    public String url = "http://localhost:8080";
+    private static OkHttpClient client = new OkHttpClient();
+    public String url = SERVER_ADDRESS;
     //TODO: change token to correct type
     public int connectToServer(int token){
         return 0;
@@ -96,7 +98,9 @@ public class OkClient {
         Response response = client.newCall(request).execute();
         //TODO: this may need to be updated for the new message format
         json = response.body().string();
-        UserData tempUser = gson.fromJson(json, UserData.class);
+        System.out.println(json);
+        ResponseMsg resObj = gson.fromJson(json, ResponseMsg.class);
+        UserData tempUser = gson.fromJson(resObj.message.getAsJsonObject("userDetails"), UserData.class);
         user.token = tempUser.token;
         user.id = tempUser.id;
     }
@@ -131,7 +135,16 @@ public class OkClient {
                 .url(url + "/user/" + current.id + "/friend/" + username)
                 .build();
         Response response = client.newCall(request).execute();
-        return response.body().string();
+        String json = response.body().string();
+        System.out.println(json);
+        int status = response.code();
+        if (status >= 200 && status < 400) {
+            JsonObject resObj = gson.fromJson(json, JsonObject.class);
+            String res = resObj.get("status").toString();
+            System.out.println("Status: " + res);
+            if (res.equals("\"VALID REQUEST\"")) return "OK";
+        }
+        return "Request Error";
     }
 
     public String acceptFriend(String username, UserData current) throws IOException{
@@ -193,14 +206,11 @@ public class OkClient {
     }
 
 
-    public OkClient(){
-        client = new OkHttpClient();
-    }
+    public OkClient(){}
 
     public OkClient(String add){
         //TODO: verify address
         url = add;
-        client = new OkHttpClient();
     }
 }
 

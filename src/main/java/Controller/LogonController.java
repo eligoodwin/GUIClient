@@ -15,7 +15,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class LogonController {
-    private OkClient client = new OkClient("http://localhost:8080");
+    private OkClient client = new OkClient();
     @FXML
     private TextField logonUsername;
     @FXML
@@ -38,17 +38,9 @@ public class LogonController {
         Stage theStage = (Stage)source.getScene().getWindow();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
         Parent root = loader.<Parent>load();
-        if (root == null) System.out.println("Root is null");
-        else {
-            System.out.println("Parent is not null");
-        }
         FriendsController controller = loader.<FriendsController>getController();
-        if (controller == null) System.out.println("Controller is null");
-        else{
-            System.out.println("Controller is not null");
-            controller.initData(user);
-        }
-        Scene friendsScene = new Scene(root, 200, 600);
+        controller.initData(user);
+        Scene friendsScene = new Scene(root, 300, 550);
         theStage.setScene(friendsScene);
     }
 

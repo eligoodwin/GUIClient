@@ -14,7 +14,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class AccountCreationController {
-    private OkClient client = new OkClient("http://localhost:8080");
+    private OkClient client = new OkClient();
     @FXML
     private TextField createPassword;
     @FXML
@@ -42,6 +42,17 @@ public class AccountCreationController {
         System.out.printf("Obj email: %s%n", user.email);
         System.out.printf("Obj token: %s%n", user.token);
         System.out.printf("Obj id: %s%n", user.id);
+        Node source = (Node) actionEvent.getSource();
+        Stage theStage = (Stage) source.getScene().getWindow();
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
+        try {
+            Parent root = loader.<Parent>load();
+            FriendsController controller = loader.<FriendsController>getController();
+            controller.initData(user);
+            Scene friendsScene = new Scene(root, 200, 600);
+            theStage.setScene(friendsScene);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-
 }
