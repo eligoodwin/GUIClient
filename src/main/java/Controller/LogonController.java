@@ -35,7 +35,7 @@ public class LogonController {
             //TODO: re-try route (pop up message?)
         }
         //for debugging only
-        if (user.username.equals("testLocalChat")){
+        if (user.username.equals("testLocalChat") || user.username.equals("testlocalchat")){
             //start local server - default port == 9000
             PeerConnection peer = new PeerConnection(9000);
             //display popup that waiting for peer connection

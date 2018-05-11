@@ -3,6 +3,7 @@ package PeerNetworking;
 import Controller.ChatInterface;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import java.io.*;
 import java.net.*;
@@ -15,17 +16,66 @@ public class PeerConnection {
     private UserData user;
     private FriendData friend;
     private boolean running = true;
-    private Socket connectionClient;
+    private Socket connectionClient = null;
     private Thread incomingThread;
+    private Thread testServer;
     private String peerServerAddress;
     private ChatInterface parentWindow = null;
 
     public synchronized UserData getUser(){return user;}
 
+    private synchronized void setIPandPort(String ip, int port){
+        if (user == null){
+                user = new UserData();
+        }
+        user.ipAddress = ip;
+        user.peerServerPort = Integer.toString(port);
+    }
+
     public synchronized boolean getRunning(){ return running;}
 
     public synchronized void setRunning(boolean set){
         running = set;
+    }
+
+    private synchronized void setConnectionClient(Socket connection){
+        connectionClient = connection;
+    }
+
+    private void startServer(){
+        ServerSocket sock = null;
+        if (localTestPort > 65535) return;
+        while (true) {
+            try {
+                sock = new ServerSocket(localTestPort);
+                break;
+            }
+            catch(IOException e){
+                localTestPort++;
+            }
+        }
+        //set local IP and port
+        InetAddress ip;
+        try{
+            ip = InetAddress.getLocalHost();
+            setIPandPort(ip.getCanonicalHostName(), localTestPort);
+        }
+        catch(UnknownHostException e){
+            e.printStackTrace();
+            setIPandPort("127.0.0.1", 9000);
+        }
+        try {
+            connectionClient = sock.accept();
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
+        try {
+            sock.close();
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
     }
 
     public void setParentWindow(ChatInterface window){
@@ -41,36 +91,11 @@ public class PeerConnection {
     }
 
     //This is used only for debugging on local networks
-    public PeerConnection(int test) throws SocketException, IOException {
+    public PeerConnection(int test){
         user = new UserData();
         localTestPort = test;
-        ServerSocket sock = null;
-        if (localTestPort > 65535) {
-            throw new SocketException();
-        }
-        while (true) {
-            try {
-                sock = new ServerSocket(localTestPort);
-                break;
-            }
-            catch(IOException e){
-                localTestPort++;
-            }
-        }
-        //set local IP and port
-        InetAddress ip;
-        try{
-            ip = InetAddress.getLocalHost();
-            user.ipAddress = ip.getHostAddress();
-            user.peerServerPort = Integer.toString(localTestPort);
-        }
-        catch(UnknownHostException e){
-            e.printStackTrace();
-            user.ipAddress = "127.0.0.1";
-            user.peerServerPort = "9000";
-        }
-        connectionClient = sock.accept();
-        sock.close();
+        testServer = new Thread(this::startServer);
+        testServer.start();
     }
 
     public int connectNatless(){
@@ -114,6 +139,7 @@ public class PeerConnection {
     }
 
     public int sendMessage(String msg){
+        if (connectionClient == null) return 1;
         try {
             PrintWriter out =
                     new PrintWriter(connectionClient.getOutputStream(), true);
