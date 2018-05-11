@@ -1,6 +1,7 @@
 package Controller;
 
 import ClientAccountNetworking.OkClient;
+import PeerNetworking.PeerConnection;
 import QueryObjects.UserData;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -33,15 +34,45 @@ public class LogonController {
             e.printStackTrace();
             //TODO: re-try route (pop up message?)
         }
-        System.out.println("Logon controller clicked");
-        Node source = (Node) actionEvent.getSource();
-        Stage theStage = (Stage)source.getScene().getWindow();
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
-        Parent root = loader.<Parent>load();
-        FriendsController controller = loader.<FriendsController>getController();
-        controller.initData(user);
-        Scene friendsScene = new Scene(root, 300, 550);
-        theStage.setScene(friendsScene);
+        //for debugging only
+        if (user.username.equals("testLocalChat")){
+            //start local server - default port == 9000
+            PeerConnection peer = new PeerConnection(9000);
+            //display popup that waiting for peer connection
+
+            //update IP after connection
+            UserData temp = peer.getUser();
+            user.ipAddress = temp.ipAddress;
+            user.peerServerPort = temp.peerServerPort;
+            client.updateIP(user);
+            //upon connection create chatInterface
+            Node source = (Node) actionEvent.getSource();
+            Stage theStage = (Stage)source.getScene().getWindow();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatInterface.fxml"));
+            try {
+                Parent root = loader.<Parent>load();
+                ChatInterface controller = loader.<ChatInterface>getController();
+                controller.initController(peer);
+                Scene chatScene = new Scene(root, 300, 550);
+                theStage.setScene(chatScene);
+            }
+            catch(IOException e){
+                e.printStackTrace();
+                System.out.println("Exception in peer debug");
+            }
+        }
+        //normal route
+        else {
+            System.out.println("Logon controller clicked");
+            Node source = (Node) actionEvent.getSource();
+            Stage theStage = (Stage) source.getScene().getWindow();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
+            Parent root = loader.<Parent>load();
+            FriendsController controller = loader.<FriendsController>getController();
+            controller.initData(user);
+            Scene friendsScene = new Scene(root, 300, 550);
+            theStage.setScene(friendsScene);
+        }
     }
 
         /*

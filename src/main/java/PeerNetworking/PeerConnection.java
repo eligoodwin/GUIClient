@@ -5,13 +5,12 @@ import QueryObjects.FriendData;
 import QueryObjects.UserData;
 
 import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
+import java.net.*;
 
 public class PeerConnection {
     private int localPort;
+    private String localTestIP;
+    private int localTestPort;
     private int serverPort;
     private UserData user;
     private FriendData friend;
@@ -20,6 +19,8 @@ public class PeerConnection {
     private Thread incomingThread;
     private String peerServerAddress;
     private ChatInterface parentWindow = null;
+
+    public synchronized UserData getUser(){return user;}
 
     public synchronized boolean getRunning(){ return running;}
 
@@ -37,6 +38,39 @@ public class PeerConnection {
         this.peerServerAddress = friend.ipAddress;
         this.localPort = Integer.parseInt(user.peerServerPort);
         this.serverPort = Integer.parseInt(friend.peerServerPort);
+    }
+
+    //This is used only for debugging on local networks
+    public PeerConnection(int test) throws SocketException, IOException {
+        user = new UserData();
+        localTestPort = test;
+        ServerSocket sock = null;
+        if (localTestPort > 65535) {
+            throw new SocketException();
+        }
+        while (true) {
+            try {
+                sock = new ServerSocket(localTestPort);
+                break;
+            }
+            catch(IOException e){
+                localTestPort++;
+            }
+        }
+        //set local IP and port
+        InetAddress ip;
+        try{
+            ip = InetAddress.getLocalHost();
+            user.ipAddress = ip.getHostAddress();
+            user.peerServerPort = Integer.toString(localTestPort);
+        }
+        catch(UnknownHostException e){
+            e.printStackTrace();
+            user.ipAddress = "127.0.0.1";
+            user.peerServerPort = "9000";
+        }
+        connectionClient = sock.accept();
+        sock.close();
     }
 
     public int connectNatless(){

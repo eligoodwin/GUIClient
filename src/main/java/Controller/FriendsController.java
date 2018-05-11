@@ -70,7 +70,7 @@ public class FriendsController{
         if (ok == 0){
             Node source = (Node) actionEvent.getSource();
             Stage theStage = (Stage)source.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatInterface.fxml"));
             try {
                 Parent root = loader.<Parent>load();
                 ChatInterface controller = loader.<ChatInterface>getController();
