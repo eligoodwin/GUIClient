@@ -186,14 +186,17 @@ public class OkClient {
 
     public String updateIP(UserData current) throws IOException{
         if (url == "") return "No URL set!";
-        RequestBody body = RequestBody.create(JSON, "{\"newIP\":\"\"");
+        String json = exGson.toJson(current);
+        System.out.println("Body string:\n" + json);
+        RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
                 .url(url + "/user/" + current.id + "/ipAddress=?" + current.ipAddress + "&portNumber=?" + current.peerServerPort)
-                .put(body)
+                .post(body)
                 .build();
         Response response = client.newCall(request).execute();
-        System.out.println(response.body().string());
-        return response.body().string();
+        String res = response.body().string();
+        System.out.println(res);
+        return res;
     }
 
     public void setURL(String add){
