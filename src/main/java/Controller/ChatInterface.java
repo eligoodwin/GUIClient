@@ -1,5 +1,8 @@
 package Controller;
 
+import PeerNetworking.PeerConnection;
+import QueryObjects.FriendData;
+import QueryObjects.UserData;
 import TestBot.JadenSmithBot;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -15,36 +18,23 @@ public class ChatInterface {
     public TextArea messageWindow;
     public Button sendButton;
     public TextField messageToSend;
+    private UserData user;
+    private FriendData friend;
     private JadenSmithBot jadenSmithBot;
     private Thread jadenBotThread;
-
+    private PeerConnection peer = null;
     @FXML
     public void initialize(){
-        //start jaden bot thread
-        this.jadenSmithBot = new JadenSmithBot();
-        this.jadenBotThread = new Thread( () -> {
-            Random random = new Random();
-            while(true){
-                int randomWaitInterval = random.nextInt(10) + 1;
-                try {
-                    Thread.sleep(randomWaitInterval * 1000);
-                    putRandomGarbageOnScreen();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        jadenBotThread.start();
+    }
 
-        messageToSend.setOnKeyPressed( event -> {
-            if(!messageToSend.getText().isEmpty() && event.getCode() ==KeyCode.ENTER){
-               sendMessageToWindow(userIsSource(messageToSend.getText()));
-               messageToSend.clear();
-            }
-        });
+    public void initController(PeerConnection peer){
+        this.peer = peer;
+        peer.setParentWindow(this);
+        peer.startReceiving();
     }
 
     public void exitProgram(ActionEvent actionEvent) {
+        if (peer != null) peer.stopConnection();
         System.out.println("Quit");
         System.exit(0);
     }
@@ -52,6 +42,7 @@ public class ChatInterface {
     public void sendMessage(ActionEvent actionEvent) {
         String message = messageToSend.getText();
         sendMessageToWindow(userIsSource(message));
+        peer.sendMessage(message);
     }
 
 
@@ -66,7 +57,7 @@ public class ChatInterface {
         messageWindow.appendText(String.format("This chat window has %s rows", String.valueOf(height)));
     }
 
-    private void sendMessageToWindow(String message){
+    public void sendMessageToWindow(String message){
         messageWindow.appendText(message);
     }
 
@@ -79,7 +70,7 @@ public class ChatInterface {
         return String.format("You said >> \t%s\n", message);
     }
 
-    private String userIsNotSource(String message){
+    public String userIsNotSource(String message){
         return String.format("They said << \t%s\n", message);
     }
 }
