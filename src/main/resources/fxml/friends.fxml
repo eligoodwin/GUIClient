@@ -47,7 +47,7 @@
                     mnemonicParsing="false"
                     prefHeight="48.0"
                     prefWidth="257.0"
-                    text="Send Message" />
+                    text="Connect" />
             <Button
                     fx:id="friendsAdd"
                     onAction="#addFriend"

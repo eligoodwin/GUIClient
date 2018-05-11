@@ -33,7 +33,6 @@ public class OkClient {
             = MediaType.parse("application/json; charset=utf-8");
     private static OkHttpClient client = new OkHttpClient();
     public String url = SERVER_ADDRESS;
-    //TODO: change token to correct type
     public int connectToServer(int token){
         return 0;
     }
@@ -197,14 +196,9 @@ public class OkClient {
         return response.body().string();
     }
 
-    public int disconnect(){
-        return 0;
-    }
-
     public void setURL(String add){
         url = add;
     }
-
 
     public OkClient(){}
 

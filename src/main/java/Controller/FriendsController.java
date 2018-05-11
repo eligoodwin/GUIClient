@@ -1,13 +1,16 @@
 package Controller;
 
 import ClientAccountNetworking.OkClient;
+import PeerNetworking.PeerConnection;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ListView;
@@ -56,8 +59,32 @@ public class FriendsController{
         }
     }
 
-    public void msgFriend(){
-
+    public void msgFriend(ActionEvent actionEvent){
+        //get selected friend from listview
+        FriendData friend = friendsList.getSelectionModel().getSelectedItem();
+        //feed friend ip and port to PeerConnection
+        PeerConnection peer = new PeerConnection(user, friend);
+        //attempt connection
+        int ok = peer.connectNatless();
+        //if connection succesful open chatInterface
+        if (ok == 0){
+            Node source = (Node) actionEvent.getSource();
+            Stage theStage = (Stage)source.getScene().getWindow();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
+            try {
+                Parent root = loader.<Parent>load();
+                ChatInterface controller = loader.<ChatInterface>getController();
+                controller.initController(peer);
+                Scene chatScene = new Scene(root, 300, 550);
+                theStage.setScene(chatScene);
+            }
+            catch(IOException e){
+                e.printStackTrace();
+                System.out.println("Exception in msgFriend");
+            }
+        }
+        //else popup
+        else System.out.println("Could not open peer connection. Error: " + ok);
     }
 
     public void addFriend(){
