@@ -17,6 +17,7 @@ public class PeerConnection {
     private FriendData friend;
     private boolean running = true;
     private Socket connectionClient = null;
+    private ServerSocket sock = null;
     private Thread incomingThread;
     private Thread testServer;
     private String peerServerAddress;
@@ -43,29 +44,11 @@ public class PeerConnection {
     }
 
     private void startServer(){
-        ServerSocket sock = null;
-        if (localTestPort > 65535) return;
-        while (true) {
-            try {
-                sock = new ServerSocket(localTestPort);
-                break;
-            }
-            catch(IOException e){
-                localTestPort++;
-            }
-        }
-        //set local IP and port
-        InetAddress ip;
-        try{
-            ip = InetAddress.getLocalHost();
-            setIPandPort(ip.getCanonicalHostName(), localTestPort);
-        }
-        catch(UnknownHostException e){
-            e.printStackTrace();
-            setIPandPort("127.0.0.1", 9000);
-        }
+        if (sock == null) return;
         try {
             connectionClient = sock.accept();
+            incomingThread = new Thread(this::startReceiving);
+            incomingThread.start();
         }
         catch(IOException e){
             e.printStackTrace();
@@ -94,6 +77,27 @@ public class PeerConnection {
     public PeerConnection(int test){
         user = new UserData();
         localTestPort = test;
+        sock = null;
+        if (localTestPort > 65535) return;
+        while (true) {
+            try {
+                sock = new ServerSocket(localTestPort);
+                break;
+            }
+            catch(IOException e){
+                localTestPort++;
+            }
+        }
+        //set local IP and port
+        InetAddress ip;
+        try{
+            ip = InetAddress.getLocalHost();
+            setIPandPort(ip.getHostAddress(), localTestPort);
+        }
+        catch(UnknownHostException e){
+            e.printStackTrace();
+            setIPandPort("127.0.0.1", 9000);
+        }
         testServer = new Thread(this::startServer);
         testServer.start();
     }

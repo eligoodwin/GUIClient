@@ -44,6 +44,7 @@ public class LogonController {
             UserData temp = peer.getUser();
             user.ipAddress = temp.ipAddress;
             user.peerServerPort = temp.peerServerPort;
+            System.out.println("Trace, IP update: " + user.ipAddress + " : " + user.peerServerPort);
             client.updateIP(user);
             //upon connection create chatInterface
             Node source = (Node) actionEvent.getSource();
@@ -52,7 +53,7 @@ public class LogonController {
             try {
                 Parent root = loader.<Parent>load();
                 ChatInterface controller = loader.<ChatInterface>getController();
-                controller.initController(peer);
+                controller.setPeerTester(peer);
                 Scene chatScene = new Scene(root, 300, 550);
                 theStage.setScene(chatScene);
             }

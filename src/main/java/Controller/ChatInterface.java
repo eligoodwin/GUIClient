@@ -33,6 +33,11 @@ public class ChatInterface {
         peer.startReceiving();
     }
 
+    public void setPeerTester(PeerConnection peer){
+        this.peer = peer;
+        peer.setParentWindow(this);
+    }
+
     public void exitProgram(ActionEvent actionEvent) {
         if (peer != null) peer.stopConnection();
         System.out.println("Quit");

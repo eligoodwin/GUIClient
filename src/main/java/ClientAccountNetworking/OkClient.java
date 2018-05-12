@@ -190,7 +190,7 @@ public class OkClient {
         System.out.println("Body string:\n" + json);
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
-                .url(url + "/user/" + current.id + "/ipAddress=?" + current.ipAddress + "&portNumber=?" + current.peerServerPort)
+                .url(url + "/user/" + current.id + "/ipAddress")
                 .post(body)
                 .build();
         Response response = client.newCall(request).execute();
