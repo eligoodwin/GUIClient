@@ -1,14 +1,18 @@
 package PeerNetworking;
 
 import Controller.ChatInterface;
+import QueryObjects.ChatMessage;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
+import com.google.gson.Gson;
 import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import java.io.*;
 import java.net.*;
 
 public class PeerConnection {
+    private final String token =  "fXtas7yB2HcIVoCyyQ78";
+    private static Gson gson = new Gson();
     private int localPort;
     private String localTestIP;
     private int localTestPort;
@@ -33,9 +37,9 @@ public class PeerConnection {
         user.peerServerPort = Integer.toString(port);
     }
 
-    public synchronized boolean getRunning(){ return running;}
+    private synchronized boolean getRunning(){ return running;}
 
-    public synchronized void setRunning(boolean set){
+    private synchronized void setRunning(boolean set){
         running = set;
     }
 
@@ -113,6 +117,10 @@ public class PeerConnection {
         }
         try {
             connectionClient.connect(new InetSocketAddress(peerServerAddress, serverPort));
+            //send token
+            //TODO: make better
+            String json = "{ \"token\": \"fXtas7yB2HcIVoCyyQ78\"}";
+            sendMessage(json);
         }
         catch(IOException e){
             e.printStackTrace();
@@ -127,9 +135,11 @@ public class PeerConnection {
     }
 
     private void receiveMessages(){
+        //TODO: parse object in receive message
         try {
             BufferedReader input = getBuffer(connectionClient);
             while(getRunning()){
+                //TODO: check for ending connection
                 String msg = input.readLine();
                 if(parentWindow != null){
                     parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
@@ -140,14 +150,29 @@ public class PeerConnection {
         catch(IOException e){
             e.printStackTrace();
         }
+        finally{
+            if (connectionClient != null){
+                try{
+                    System.out.println("Closing connection");
+                    connectionClient.close();
+                }
+                catch(IOException e){
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     public int sendMessage(String msg){
+        //TODO: close connection on window close or program shutdown
         if (connectionClient == null) return 1;
+        ChatMessage message = new ChatMessage(token, msg);
+        String json = gson.toJson(message);
+        System.out.println(json);
         try {
             PrintWriter out =
                     new PrintWriter(connectionClient.getOutputStream(), true);
-            out.println(msg);
+            out.println(json);
         }
         catch(IOException e){
             e.printStackTrace();
@@ -176,13 +201,17 @@ public class PeerConnection {
         }
     }
 
-    public void stopConnection(){
-        setRunning(false);
-        try {
-            connectionClient.close();
+    public synchronized void stopConnection(){
+        if (getRunning()) {
+            setRunning(false);
         }
-        catch(IOException e){
-            e.printStackTrace();
+        else if (connectionClient != null){
+            try {
+                connectionClient.close();
+            }
+            catch(IOException e){
+                e.printStackTrace();
+            }
         }
     }
 }

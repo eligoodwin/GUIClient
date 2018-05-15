@@ -39,6 +39,7 @@
     />
 
     <Button text="Submit"
+            defaultButton="true"
             onAction="#createAccount"
             GridPane.rowIndex="4"
             GridPane.rowSpan="2"

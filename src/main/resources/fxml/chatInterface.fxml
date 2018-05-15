@@ -27,6 +27,7 @@
             fx:id="sendButton"
             layoutX="491.0"
             layoutY="333.0"
+            defaultButton="true"
             onAction="#sendMessage"
             mnemonicParsing="false"
             prefHeight="53.0"

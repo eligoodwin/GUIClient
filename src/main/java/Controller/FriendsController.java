@@ -7,6 +7,7 @@ import QueryObjects.UserData;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -15,6 +16,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ListView;
 import javafx.stage.Stage;
+import javafx.stage.Window;
+import javafx.stage.WindowEvent;
 
 import java.io.IOException;
 import java.net.URL;
@@ -26,11 +29,11 @@ public class FriendsController{
     private OkClient client = null;
     private UserData user = null;
     //TODO: fList and friends can be merged?
-    private ArrayList<FriendData> friends = new ArrayList<FriendData>();
+    private ArrayList<FriendData> friends = new ArrayList<>();
 
     @FXML
     ListView<FriendData> friendsList;
-    ObservableList<FriendData> fList = FXCollections.observableArrayList();
+    private ObservableList<FriendData> fList = FXCollections.observableArrayList();
 
     @FXML
     public void initialize(){
@@ -39,7 +42,7 @@ public class FriendsController{
         if (friendsList != null) System.out.println("friendsList is not null");
     }
 
-    public void initData(UserData usr){
+    void initData(UserData usr){
         System.out.println("Trace: in initData");
         client = new OkClient();
         user = usr;
@@ -52,9 +55,7 @@ public class FriendsController{
             //TODO: handle this
         }
         if (friends.size() > 0){
-            for (FriendData friend : friends){
-                fList.add(friend);
-            }
+            fList.addAll(friends);
             friendsList.setItems(fList);
         }
     }
@@ -76,6 +77,11 @@ public class FriendsController{
                 ChatInterface controller = loader.<ChatInterface>getController();
                 controller.initController(peer);
                 Scene chatScene = new Scene(root, 300, 550);
+                theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
+                    public void handle(WindowEvent we) {
+                        controller.endConnection();
+                    }
+                });
                 theStage.setScene(chatScene);
             }
             catch(IOException e){

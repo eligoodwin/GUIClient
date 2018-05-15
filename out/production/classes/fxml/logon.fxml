@@ -39,6 +39,7 @@
     />
 
     <Button text="Sign in"
+            defaultButton="true"
             onAction="#gotoNextPage"
             GridPane.rowIndex="3"
             GridPane.rowSpan="2"

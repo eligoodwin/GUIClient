@@ -20,34 +20,33 @@ public class ChatInterface {
     public TextField messageToSend;
     private UserData user;
     private FriendData friend;
-    private JadenSmithBot jadenSmithBot;
-    private Thread jadenBotThread;
     private PeerConnection peer = null;
     @FXML
     public void initialize(){
     }
 
-    public void initController(PeerConnection peer){
+    void initController(PeerConnection peer){
         this.peer = peer;
         peer.setParentWindow(this);
         peer.startReceiving();
     }
 
-    public void setPeerTester(PeerConnection peer){
+    void setPeerTester(PeerConnection peer){
         this.peer = peer;
         peer.setParentWindow(this);
-    }
-
-    public void exitProgram(ActionEvent actionEvent) {
-        if (peer != null) peer.stopConnection();
-        System.out.println("Quit");
-        System.exit(0);
     }
 
     public void sendMessage(ActionEvent actionEvent) {
         String message = messageToSend.getText();
         sendMessageToWindow(userIsSource(message));
         peer.sendMessage(message);
+    }
+
+    void endConnection(){
+        if (peer != null){
+            System.out.println("Terminating connection in endConnection");
+            peer.stopConnection();
+        }
     }
 
 
@@ -65,11 +64,6 @@ public class ChatInterface {
     public void sendMessageToWindow(String message){
         messageWindow.appendText(message);
     }
-
-    private void putRandomGarbageOnScreen(){
-        sendMessageToWindow(userIsNotSource(jadenSmithBot.getRandomGarbage()));
-    }
-
 
     private String userIsSource(String message){
         return String.format("You said >> \t%s\n", message);

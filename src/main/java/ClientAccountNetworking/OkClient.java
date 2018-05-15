@@ -25,21 +25,22 @@ import static java.lang.Integer.parseInt;
 public class OkClient {
     private final static String GOOD_RES = "VALID REQUEST";
     private final static String API_TOKEN = "fXtas7yB2HcIVoCyyQ78";
-    private final static String SERVER_ADDRESS = "http://localhost:8080";
-    public static Gson gson = new Gson();
+    //Server: http://104.168.134.135:8080
+    private final static String SERVER_ADDRESS = "http://104.168.134.135:8080";
+    private static Gson gson = new Gson();
     //Source: https://stackoverflow.com/questions/4802887/gson-how-to-exclude-specific-fields-from-serialization-without-annotations
-    public static Gson exGson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-    public static final MediaType JSON
+    private static Gson exGson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+    private static final MediaType JSON
             = MediaType.parse("application/json; charset=utf-8");
     private static OkHttpClient client = new OkHttpClient();
-    public String url = SERVER_ADDRESS;
+    private String url = SERVER_ADDRESS;
     public int connectToServer(int token){
         return 0;
     }
 
     //TODO: store response to modularize code and allow flexible handling of response
     public String sendGet() throws IOException {
-        if (url == "") return "No URL set!";
+        if (url.equals("")) return "No URL set!";
         Request request = new Request.Builder()
                 .url(url)
                 .build();
@@ -74,7 +75,7 @@ public class OkClient {
     }
 
     public String sendPost(String msg) throws IOException{
-        if (url == "") return "No URL set!";
+        if (url.equals("")) return "No URL set!";
         RequestBody body = RequestBody.create(JSON, msg);
         Request request = new Request.Builder()
                 .url(url)
@@ -85,7 +86,7 @@ public class OkClient {
     }
 
     public void addUser(UserData user) throws IOException {
-        if (url == "") return;
+        if (url.equals("")) return;
         user.API_token = API_TOKEN;
         String json = exGson.toJson(user);
         System.out.println("JSON string:\n" + json);
@@ -105,7 +106,7 @@ public class OkClient {
     }
 
     public String checkToken(UserData user) throws IOException{
-        if (url == "") return "No URL set!";
+        if (url.equals("")) return "No URL set!";
         String json = gson.toJson(user);
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
@@ -117,7 +118,7 @@ public class OkClient {
     }
 
     public String testJWT(String jwt) throws IOException{
-        if (url == "") return "No URL set!";
+        if (url.equals("")) return "No URL set!";
         String json = "{\"jwt\":\"" + jwt + "\"}";
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
@@ -129,7 +130,7 @@ public class OkClient {
     }
 
     public String requestFriend(String username, UserData current) throws IOException{
-        if (url == "") return "No URL set!";
+        if (url.equals("")) return "No URL set!";
         Request request = new Request.Builder()
                 .url(url + "/user/" + current.id + "/friend/" + username)
                 .build();
@@ -147,7 +148,7 @@ public class OkClient {
     }
 
     public String acceptFriend(String username, UserData current) throws IOException{
-        if (url == "") return "No URL set!";
+        if (url.equals("")) return "No URL set!";
         Request request = new Request.Builder()
                 .url(url + "/user/" + current.id + "/friend/" + username + "/2")
                 .build();
@@ -157,7 +158,7 @@ public class OkClient {
 
     //TODO: update return type when determined how to parse code
     public String getFriends(UserData current, ArrayList<FriendData> friends) throws IOException {
-        if (url == "") return "No URL";
+        if (url.equals("")) return "No URL";
         Request request = new Request.Builder()
                 .url(url + "/user/" + current.id + "/friend")
                 .build();
@@ -185,7 +186,7 @@ public class OkClient {
     }
 
     public String updateIP(UserData current) throws IOException{
-        if (url == "") return "No URL set!";
+        if (url.equals("")) return "No URL set!";
         String json = exGson.toJson(current);
         System.out.println("Body string:\n" + json);
         RequestBody body = RequestBody.create(JSON, json);
