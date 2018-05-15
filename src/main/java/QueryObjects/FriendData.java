@@ -14,6 +14,10 @@ public class FriendData {
 
     @Override
     public String toString(){
+        if (Integer.parseInt(requestStatus) == 1){
+            return friend_name + " - pending";
+        }
         return friend_name;
     }
+
 }

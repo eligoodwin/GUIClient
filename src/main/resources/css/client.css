@@ -6,3 +6,11 @@
     -fx-vgap: 10;
     -fx-hgap: 10;
 }
+
+.pendingRequest{
+    -fx-font-style: italic;
+}
+
+.acceptedFriend{
+    -fx-font-style: normal;
+}
