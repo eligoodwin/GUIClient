@@ -2,7 +2,7 @@ package QueryObjects;
 
 import com.google.gson.JsonObject;
 
-public class ResponseMsg {
+public class ResponseObj {
     public String status;
     public JsonObject message;
 }

@@ -34,7 +34,7 @@ public class FriendsController{
     private ArrayList<FriendData> friends = new ArrayList<>();
 
     @FXML
-    ListView<FriendData> friendsList;
+    ListView<FriendData> friendsList = null;
     private ObservableList<FriendData> fList = FXCollections.observableArrayList();
 
     class FriendDataCell extends ListCell<FriendData>{
@@ -60,25 +60,36 @@ public class FriendsController{
                 if (friend == null) {
                     System.out.println("No friend");
                     this.setContextMenu(null);
+                    return;
                 }
-                //pending
-                else if(Integer.parseInt(friend.requestStatus) == 0){
+                int friendStatus = Integer.parseInt(friend.requestStatus);
+                if(friendStatus == 0){
                     this.setItem(null);
                     friendsList.getItems().remove(friend);
                     friendsList.refresh();
                     this.setContextMenu(null);
                 }
-                else if (Integer.parseInt(friend.requestStatus) == 1) {
+                //pending
+                else if (friendStatus == 1) {
                     System.out.println("Found friend with status 1");
                     this.setContextMenu(pendingMenu);
                     this.textProperty().bind(Bindings.format("Request from %s", friend.friend_name));
                     this.setStyle("-fx-font-style: italic");
-                } else if (Integer.parseInt(friend.requestStatus) == 2) {
+                }
+                //accepted friend
+                else if (friendStatus == 2) {
                     System.out.println("Found friend with status 2");
-                    this.setContextMenu(blockMenu);
+                    if (friend.friend_name.equals("jadenBot")){
+                        this.setContextMenu(null);
+                    }
+                    else {
+                        this.setContextMenu(blockMenu);
+                    }
                     this.textProperty().bind(Bindings.format("%s", friend.friend_name));
                     this.setStyle("-fx-font-style: normal");
-                } else {
+                }
+                //blocked or rejected request
+                else {
                     this.setItem(null);
                     friendsList.getItems().remove(friend);
                     friendsList.refresh();
@@ -90,16 +101,15 @@ public class FriendsController{
 
     @FXML
     public void initialize(){
+        client = new OkClient();
         System.out.println("Trace: in initialize");
-        if (user != null) System.out.println("User is not null");
-        if (friendsList != null) System.out.println("friendsList is not null");
-
     }
 
-    void initData(UserData usr){
-        System.out.println("Trace: in initData");
-        client = new OkClient();
-        user = usr;
+    void updateFriendsList(){
+        if (user == null) return;
+        if (fList.size() != 0) fList.clear();
+        if (friendsList != null) friendsList.getItems().clear();
+        if (friends != null) friends.clear();
         try {
             String res = client.getFriends(user, friends);
             //TODO: handle res
@@ -110,7 +120,6 @@ public class FriendsController{
         }
         //source: https://stackoverflow.com/questions/20936101/get-listcell-via-listview
         if (friends.size() > 0){
-            if (fList.size() != 0) fList.clear();
             //TODO: may need to remove blocked friends here
             fList.addAll(friends);
             friendsList.setItems(fList);
@@ -125,16 +134,54 @@ public class FriendsController{
         }
     }
 
+    void initData(UserData usr){
+        System.out.println("Trace: in initData");
+        user = usr;
+        updateFriendsList();
+    }
+
     private void acceptFriend(FriendData friend){
+        try {
+            int check = client.acceptFriend(user, friend.friend_name);
+            if (check == 0) updateFriendsList();
+            else{
+                //TODO: popup error message
+            }
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
         System.out.println("Accepted: " + friend.friend_name);
     }
 
     private void rejectFriend(FriendData friend){
+        try {
+            int check = client.rejectFriend(user, friend.friend_name);
+            if (check == 0) updateFriendsList();
+            else{
+                //TODO: popup error message
+            }
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
         System.out.println("Rejected: " + friend.friend_name);
     }
 
     private void blockFriend(FriendData friend){
-        System.out.println("Blocked: " + friend.friend_name);
+        try {
+            int check = client.blockFriend(user, friend.friend_name);
+            if (check == 0) {
+                System.out.println("Blocked: " + friend.friend_name);
+                updateFriendsList();
+            }
+            else{
+                //TODO: popup error message
+            }
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
     }
 
     /* Trying new method to get context menu

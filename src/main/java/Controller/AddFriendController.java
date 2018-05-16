@@ -31,8 +31,8 @@ public class AddFriendController {
 
     public void submitRequest(){
         try {
-            String res = client.requestFriend(friendUsername.getText(), user);
-            if (res.equals("OK")){
+            int check = client.requestFriend(friendUsername.getText(), user);
+            if (check == 0) {
                 //display message
                 System.out.println("Response OK");
                 addFriendMsg.setText("Friend request sent");
@@ -48,7 +48,7 @@ public class AddFriendController {
                         stage.close();
                     }
                 });
-            }//res.equals("OK")
+            } // check == 0
             else{
                 addFriendMsg.setText("Error in requesting friend");
                 addFriendMsg.setVisible(true);
