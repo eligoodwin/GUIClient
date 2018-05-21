@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Text?>
+
+
+<AnchorPane prefHeight="100.0"
+            prefWidth="200.0"
+            xmlns="http://javafx.com/javafx/8.0.121"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="Controller.AcceptConnectionController">
+    <children>
+        <Button
+                fx:id="ignoreConnection"
+                onAction="#ignoreConnection"
+                layoutX="206.0"
+                layoutY="83.0"
+                mnemonicParsing="false"
+                text="Ignore" />
+        <Button
+                fx:id="acceptConnection"
+                onAction="#acceptConnection"
+                layoutX="50.0"
+                layoutY="83.0"
+                mnemonicParsing="false"
+                text="Accept" />
+        <Text
+                fx:id="incomingConnectionText"
+                layoutX="24.0"
+                layoutY="38.0"
+                strokeType="OUTSIDE"
+                strokeWidth="0.0"
+                text="Accept connection from ..." />
+        <Text
+                layoutX="125.0"
+                layoutY="38.0"
+                strokeType="OUTSIDE"
+                strokeWidth="0.0"
+                text=" ..." />
+    </children>
+</AnchorPane>

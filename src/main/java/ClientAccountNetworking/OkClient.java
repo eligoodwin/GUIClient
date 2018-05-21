@@ -206,6 +206,48 @@ public class OkClient {
         return 1;
     }
 
+    public int makeChatRequest(UserData current, String friendName) throws IOException{
+        if (url.equals("")) return -1;
+        ChatRequest chatRequest = new ChatRequest(current, friendName);
+        chatRequest.API_token = API_TOKEN;
+        String json = gson.toJson(chatRequest);
+        System.out.println("Chat request: " + json);
+        RequestBody body = RequestBody.create(JSON, json);
+        Request request = new Request.Builder()
+                .url(url + "/user/" + current.id + "/chat")
+                .post(body)
+                .build();
+        Response response = client.newCall(request).execute();
+        int resStatus = response.code();
+        if (resStatus >= 200 && resStatus < 400) {
+            String res = response.body().string();
+            System.out.println("Chat request res: " + res);
+            if (res.equals("request made")) return 0;
+        }
+        return 1;
+    }
+
+    public int getChatRequests(UserData current, ArrayList<ChatRequest> requestList) throws IOException{
+        if (url.equals("")) return -1;
+        Request request = new Request.Builder()
+                .url(url + "/user/" + current.id + "/chat")
+                .build();
+        Response response = client.newCall(request).execute();
+        int resStatus = response.code();
+        if (resStatus >= 200 && resStatus < 400) {
+            String res = response.body().string();
+            //System.out.println("Chat requests: " + res);
+            ResponseArray resObj = gson.fromJson(res, ResponseArray.class);
+            if (!resObj.status.equals("VALID")) return 1;
+            //System.out.println("Status was good");
+            ChatRequest[] tempReqs = gson.fromJson(resObj.message, ChatRequest[].class);
+            for (ChatRequest req : tempReqs){
+                requestList.add(req);
+            }
+        }
+        return 1;
+    }
+
     public void setURL(String add){
         url = add;
     }

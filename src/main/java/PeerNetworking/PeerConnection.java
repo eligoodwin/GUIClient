@@ -204,6 +204,14 @@ public class PeerConnection {
     public synchronized void stopConnection(){
         if (getRunning()) {
             setRunning(false);
+            if (incomingThread.isAlive()){
+                try {
+                    incomingThread.join();
+                }
+                catch(InterruptedException e){
+                    e.printStackTrace();
+                }
+            }
         }
         else if (connectionClient != null){
             try {
