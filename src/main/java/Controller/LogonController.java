@@ -1,6 +1,7 @@
 package Controller;
 
 import ClientAccountNetworking.OkClient;
+import PeerNetworking.ConnectionManager;
 import PeerNetworking.PeerConnection;
 import QueryObjects.UserData;
 import javafx.event.ActionEvent;
@@ -29,6 +30,13 @@ public class LogonController {
         user.password = logonPassword.getText();
         try {
             int res = client.logon(user);
+            try {
+                ConnectionManager connectionManager = ConnectionManager.getConnectionManager(user);
+            }
+            catch(IOException e){
+                e.printStackTrace();
+                //TODO: handle this better
+            }
             System.out.printf("User token: %s%n", user.token);
         } catch (IOException e) {
             e.printStackTrace();

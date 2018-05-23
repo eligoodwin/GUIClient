@@ -52,7 +52,7 @@ public class OkClient {
             ResponseObj resObj = gson.fromJson(res, ResponseObj.class);
             String ret = resObj.status;
             if (ret.equals(GOOD_RES)) {
-                user.token = resObj.message.get("authToken").toString();
+                user.token = resObj.message.get("authToken").getAsString();
                 user.id = Long.parseLong(resObj.message.get("id").toString());
                 return 0;
             }
