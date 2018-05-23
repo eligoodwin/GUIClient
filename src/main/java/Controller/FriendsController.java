@@ -1,6 +1,7 @@
 package Controller;
 
 import ClientAccountNetworking.OkClient;
+import Cryptography.LocalAsymmetricCrypto;
 import PeerNetworking.PeerConnection;
 import QueryObjects.ChatRequest;
 import QueryObjects.FriendData;
@@ -43,6 +44,7 @@ public class FriendsController{
     private static final String FRIEND_ACCEPTED = "2";
     private static final long REQ_LISTEN_REFRESH = 2000;
     private static final long MAX_REQUEST_DIFF = 10000;
+    private LocalAsymmetricCrypto crypto = null;
     //0 for open, 1 for attempting connection, 2 for connected
     private int connectionStatus = 0;
     private boolean acceptConnection = false;
@@ -102,8 +104,10 @@ public class FriendsController{
                 int friendStatus = Integer.parseInt(friend.requestStatus);
                 if(friendStatus == 0){
                     this.setItem(null);
-                    friendsList.getItems().remove(friend);
-                    friendsList.refresh();
+                    //friendsList.getItems().remove(friend);
+                    int index = findFriend(friend);
+                    if (index >= 0) fList.remove(index);
+                    //friendsList.refresh();
                     this.setContextMenu(null);
                 }
                 //pending
@@ -128,17 +132,43 @@ public class FriendsController{
                 //blocked or rejected request
                 else {
                     this.setItem(null);
-                    friendsList.getItems().remove(friend);
-                    friendsList.refresh();
+                    int index = findFriend(friend);
+                    if (index >= 0) fList.remove(index);
+                    //friendsList.refresh();
                     System.out.println("Request status: " + friend.requestStatus);
                 }
             }
+        }//end update
+    }
+
+    int findFriend(FriendData friend){
+        if (fList.size() < 1) return -1;
+        for (int i = 0; i < fList.size(); i++){
+            FriendData temp = fList.get(i);
+            if (temp.friendID == friend.friendID && temp.friend_name.equals(friend.friend_name)) return i;
         }
+        //not found
+        return -1;
     }
 
     @FXML
     public void initialize(){
         client = new OkClient();
+        try {
+            crypto = new LocalAsymmetricCrypto();
+            String simpleMsg = "This is a simple message to be encrypted.";
+            System.out.println("Pre encryption: " + simpleMsg);
+            String encrypted = crypto.encryptString(simpleMsg, null);
+            System.out.println("Encrypted: " + encrypted);
+            String decrypted = crypto.decryptString(encrypted, null);
+            System.out.println(("Decrypted: " + decrypted));
+        }
+        catch(Exception e){
+            //TODO: may want to handle this more gracefully
+            e.printStackTrace();
+            System.out.println("Could not initialize crypto object");
+            crypto = null;
+        }
         System.out.println("Trace: in initialize");
     }
 

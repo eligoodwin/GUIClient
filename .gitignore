@@ -109,3 +109,8 @@ Temporary Items
 *~
 *.swp
 *.swo
+
+# Don't store crypto keys:
+/Keys/
+/Keys/Public
+/Keys/Private
