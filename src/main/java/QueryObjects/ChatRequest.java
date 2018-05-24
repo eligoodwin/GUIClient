@@ -5,7 +5,11 @@ import com.google.gson.annotations.SerializedName;
 public class ChatRequest {
     public String username;
     public String targetUser;
+    public String targetIP;
+    public String targetPort;
     public String requestingUser;
+    public String requestingIPaddress;
+    public String requestingPort;
     @SerializedName("API token")
     public String API_token;
     public String usertoken;

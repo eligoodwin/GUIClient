@@ -32,11 +32,5 @@
                 strokeType="OUTSIDE"
                 strokeWidth="0.0"
                 text="Accept connection from ..." />
-        <Text
-                layoutX="125.0"
-                layoutY="38.0"
-                strokeType="OUTSIDE"
-                strokeWidth="0.0"
-                text=" ..." />
     </children>
 </AnchorPane>

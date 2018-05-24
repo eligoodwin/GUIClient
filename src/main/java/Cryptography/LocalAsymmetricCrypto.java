@@ -24,9 +24,11 @@ public class LocalAsymmetricCrypto {
     private KeyPair pair;
     private PrivateKey privateKey;
     private PublicKey publicKey;
+
     public PublicKey getPublicKey(){
         return publicKey;
     }
+
     public LocalAsymmetricCrypto() throws Exception {
         //generate local paths
         private_path = "." + File.separator + KEYS_FOLDER + File.separator + PRIVATE_FILE;

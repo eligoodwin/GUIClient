@@ -2,29 +2,32 @@ package PeerNetworking;
 
 import Controller.ChatInterface;
 import QueryObjects.ChatMessage;
+import QueryObjects.ChatRequest;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
 import com.google.gson.Gson;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.TimeoutException;
 
 public class PeerConnection {
     private final String token =  "fXtas7yB2HcIVoCyyQ78";
     private static Gson gson = new Gson();
+    private static ConnectionManager manager = null;
     private int localPort;
     private String localTestIP;
     private int localTestPort;
-    private int serverPort;
+    private int peerPort;
     private UserData user;
-    private FriendData friend;
+    private FriendData friend = null;
+    private ChatRequest request = null;
     private boolean running = true;
     private Socket connectionClient = null;
     private ServerSocket sock = null;
     private Thread incomingThread;
     private Thread testServer;
-    private String peerServerAddress;
+    private String peerIP;
     private ChatInterface parentWindow = null;
 
     public synchronized UserData getUser(){return user;}
@@ -69,12 +72,31 @@ public class PeerConnection {
         parentWindow = window;
     }
 
-    public PeerConnection(UserData usr, FriendData frnd) {
+    public PeerConnection(UserData usr, FriendData frnd) throws IOException {
+        if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
         this.user = usr;
         this.friend = frnd;
-        this.peerServerAddress = friend.ipAddress;
+        this.peerIP = friend.ipAddress;
         this.localPort = Integer.parseInt(user.peerServerPort);
-        this.serverPort = Integer.parseInt(friend.peerServerPort);
+        this.peerPort = Integer.parseInt(friend.peerServerPort);
+    }
+
+    public PeerConnection(UserData usr, ChatRequest req) throws IOException {
+        if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
+        this.user = usr;
+        this.request = req;
+        //Friend sent us a request
+        if (req.targetIP == null || req.targetIP == ""){
+            this.peerIP = req.requestingIPaddress;
+            this.peerPort = Integer.parseInt(req.requestingPort);
+        }
+        //We sent the request
+        else{
+            this.peerIP = req.targetIP;
+            this.peerPort = Integer.parseInt(req.targetPort);
+        }
+        this.localPort = Integer.parseInt(user.peerServerPort);
+
     }
 
     //This is used only for debugging on local networks
@@ -106,6 +128,28 @@ public class PeerConnection {
         testServer.start();
     }
 
+    public int connectNatPunch(){
+        localPort = manager.getNextSocket();
+        if (localPort == -1) return 1;
+        try {
+            connectionClient = new Socket();
+            connectionClient.setReuseAddress(true);
+            System.out.println("Connect Punch, binding port: " + localPort);
+            connectionClient.bind(new InetSocketAddress(localPort));
+            System.out.println("Attempting connection, ip:port " + peerIP + ":" + peerPort);
+            connectionClient.connect(new InetSocketAddress(peerIP, peerPort), 15*1000);
+            //TODO: share keys and verify tokens
+            sendMessage("Initial message from user");
+        } catch (SocketException s) {
+            s.printStackTrace();
+            return -1;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return -1;
+        }
+        return 0;
+    }
+
     public int connectNatless(){
         connectionClient = new Socket();
         try {
@@ -116,7 +160,7 @@ public class PeerConnection {
             return -1;
         }
         try {
-            connectionClient.connect(new InetSocketAddress(peerServerAddress, serverPort));
+            connectionClient.connect(new InetSocketAddress(peerIP, peerPort));
             //send token
             //TODO: make better
             String json = "{ \"token\": \"fXtas7yB2HcIVoCyyQ78\"}";

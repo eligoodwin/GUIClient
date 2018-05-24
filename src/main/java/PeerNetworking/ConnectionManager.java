@@ -3,6 +3,7 @@ package PeerNetworking;
 import QueryObjects.STUNRegistration;
 import QueryObjects.UserData;
 import com.google.gson.Gson;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import java.io.*;
 import java.net.*;
@@ -14,15 +15,16 @@ import java.util.ArrayList;
 //  on program exit
 public class ConnectionManager {
     private static ConnectionManager manager = null;
-    public static ConnectionManager getConnectionManager(UserData user)throws IOException{
+    public synchronized static ConnectionManager getConnectionManager(UserData user)throws IOException{
         if (manager == null) manager = new ConnectionManager(user);
         return manager;
     }
 
     private static final String API_TOKEN =  "fXtas7yB2HcIVoCyyQ78";
     //Remote: "hwsrv-265507.hostwindsdns.com"
-    private static final String STUN_ADDRESS = "localhost";
+    private static final String STUN_ADDRESS = "hwsrv-265507.hostwindsdns.com";
     private static final int STUN_PORT = 15000;
+    private static final int STUN_TIMEOUT = 10*1000;
     private static Gson gson = new Gson();
     private UserData user = null;
     private ArrayList<Socket> openSockets = new ArrayList<>();
@@ -30,10 +32,19 @@ public class ConnectionManager {
     private Socket nextSocket = null;
 
 
-    private ConnectionManager(UserData usr) throws IOException{
+    private ConnectionManager(UserData usr){
         user = usr;
-        findNextSocket();
+    }
 
+    public synchronized int getNextSocket(){
+        try {
+            findNextSocket();
+        }
+        catch(SocketException e){
+            e.printStackTrace();
+            return -1;
+        }
+        return nextPort;
     }
 
     private void findNextSocket() throws SocketException {
@@ -43,7 +54,7 @@ public class ConnectionManager {
             try {
                 nextSocket.setReuseAddress(true);
                 nextSocket.bind(new InetSocketAddress(nextPort));
-                nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT));
+                nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
                 STUNRegistration validation = new STUNRegistration(user, API_TOKEN);
                 String json = gson.toJson(validation);
                 System.out.println(json);
