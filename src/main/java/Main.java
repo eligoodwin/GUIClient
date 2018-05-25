@@ -18,8 +18,12 @@ public class Main extends Application {
         primaryStage.setScene(new Scene(root, 400, 200));
         primaryStage.show();
 
-        primaryStage.setOnCloseRequest(e -> Platform.exit());
-
+        //closes down the program completely when the program exits
+        primaryStage.setOnCloseRequest(e -> {
+                    Platform.exit();
+                    System.exit(0);
+                }
+        );
     }
 
     public static void main(String[] args){

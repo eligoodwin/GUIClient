@@ -4,6 +4,7 @@ import PeerNetworking.PeerConnection;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
 import TestBot.JadenSmithBot;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -42,12 +43,14 @@ public class ChatInterface {
         peer.sendMessage(message);
     }
 
+
     void endConnection(){
         if (peer != null){
             System.out.println("Terminating connection in endConnection");
             peer.stopConnection();
         }
     }
+
 
 
     private int getMessageWindowHeight(){

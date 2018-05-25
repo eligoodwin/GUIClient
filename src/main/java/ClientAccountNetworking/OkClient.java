@@ -21,7 +21,7 @@ public class OkClient {
     private final static String GOOD_RES = "VALID REQUEST";
     private final static String API_TOKEN = "fXtas7yB2HcIVoCyyQ78";
     //Server: http://104.168.134.135:8080
-    private final static String SERVER_ADDRESS = "http://http://104.168.134.135:8080";
+    private final static String SERVER_ADDRESS = "http://104.168.134.135:8080";
     private static Gson gson = new Gson();
     //Source: https://stackoverflow.com/questions/4802887/gson-how-to-exclude-specific-fields-from-serialization-without-annotations
     private static Gson exGson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
@@ -245,6 +245,7 @@ public class OkClient {
                 requestList.add(req);
             }
         }
+
         return 1;
     }
 
