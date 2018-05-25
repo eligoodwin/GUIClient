@@ -69,10 +69,10 @@ public class ChatInterface {
     }
 
     private String userIsSource(String message){
-        return String.format("You said >> \t%s\n", message);
+        return String.format(user.username + " >> \t%s\n", message);
     }
 
     public String userIsNotSource(String message){
-        return String.format("They said << \t%s\n", message);
+        return String.format(friend.friend_name + " << \t%s\n", message);
     }
 }
