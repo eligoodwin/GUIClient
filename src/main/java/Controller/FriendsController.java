@@ -8,6 +8,7 @@ import QueryObjects.ChatRequest;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
 import com.sun.org.apache.xpath.internal.operations.Mod;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -275,6 +276,59 @@ public class FriendsController{
         //check if friend is accepted
         if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) return;
         //TODO: popup window letting person know you can't connect to people that aren't friends
+        ChatRequest req;
+        try {
+            req = client.makeChatRequest(getUser(), friend.friend_name);
+        }
+        catch(IOException e){
+            e.printStackTrace();
+            return;
+            //TODO: popup error message
+        }
+        //feed friend ip and port to PeerConnection
+        int ok = 1;
+        PeerConnection peer = null;
+        try {
+            peer = new PeerConnection(getUser(), req);
+            //attempt connection
+            ok = peer.connectNatPunch();
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
+        //if connection succesful open chatInterface
+        if (ok == 0){
+            Node source = (Node) actionEvent.getSource();
+            Stage theStage = (Stage)source.getScene().getWindow();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatInterface.fxml"));
+            try {
+                Parent root = loader.<Parent>load();
+                ChatInterface controller = loader.<ChatInterface>getController();
+                controller.initController(peer);
+                Scene chatScene = new Scene(root, 300, 550);
+                theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
+                    public void handle(WindowEvent we) {
+                        controller.endConnection();
+                    }
+                });
+                theStage.setScene(chatScene);
+            }
+            catch(IOException e){
+                e.printStackTrace();
+                System.out.println("Exception in msgFriend");
+            }
+        }
+        //else popup
+        else System.out.println("Could not open peer connection. Error: " + ok);
+    }
+
+    // old chat request method - natless
+    public void msgFriendNatless(ActionEvent actionEvent){
+        //get selected friend from listview
+        FriendData friend = friendsList.getSelectionModel().getSelectedItem();
+        //check if friend is accepted
+        if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) return;
+        //TODO: popup window letting person know you can't connect to people that aren't friends
         //feed friend ip and port to PeerConnection
         int ok = 1;
         PeerConnection peer = null;
@@ -472,15 +526,15 @@ public class FriendsController{
                 chatRequests.add(req);
                 //Source: https://stackoverflow.com/a/13804542/2487475
                 final FutureTask query = new FutureTask(new Callable(){
-                    @Override
-                    public Object call() throws Exception{
-                        return connectToRequest(req);
-                    }
-                });
-                Platform.runLater(query);
-                check = 0;
-                try {
-                    check = (int)query.get();
+                        @Override
+                        public Object call() throws Exception{
+                            return connectToRequest(req);
+                        }
+                    });
+                    Platform.runLater(query);
+                    check = 0;
+                    try {
+                        check = (int)query.get();
                 }
                 catch(Exception e){
                     e.printStackTrace();
@@ -535,36 +589,36 @@ public class FriendsController{
     void listenForRequests(){
         OkClient threadClient = new OkClient();
         int loopCount = 0;
-        UserData threadUser = getUser();
-        ArrayList<ChatRequest> newRequests = new ArrayList<>();
-        if(threadUser == null) return;
-        //while not connected - this should change for multiple connections functionality
-        while(getConnectionStatus() != 2){
-            //if not attempting a connection
-            if (getConnectionStatus() < 1){
-                //
-                if(loopCount > 5){ removeStaleRequests(); loopCount = 0; }
-                newRequests.clear();
+            UserData threadUser = getUser();
+            ArrayList<ChatRequest> newRequests = new ArrayList<>();
+            if(threadUser == null) return;
+            //while not connected - this should change for multiple connections functionality
+            while(getConnectionStatus() != 2){
+                //if not attempting a connection
+                if (getConnectionStatus() < 1){
+                    //
+                    if(loopCount > 5){ removeStaleRequests(); loopCount = 0; }
+                    newRequests.clear();
+                    try {
+                        threadClient.getChatRequests(threadUser, newRequests);
+                        int connectionAccepted = handleRequests(newRequests);
+                        if (connectionAccepted == 1) setConnectionStatus(2);
+                    }
+                    catch(IOException e){
+                        e.printStackTrace();
+                        //TODO: figure out how to handle this gracefully
+                        break;
+                    }
+                    loopCount++;
+                } //if connection status < 1
+                //always sleep
                 try {
-                    threadClient.getChatRequests(threadUser, newRequests);
-                    int connectionAccepted = handleRequests(newRequests);
-                    if (connectionAccepted == 1) setConnectionStatus(2);
+                    Thread.sleep(REQ_LISTEN_REFRESH);
                 }
-                catch(IOException e){
+                catch(InterruptedException e){
                     e.printStackTrace();
-                    //TODO: figure out how to handle this gracefully
                     break;
                 }
-                loopCount++;
-            } //if connection status < 1
-            //always sleep
-            try {
-                Thread.sleep(REQ_LISTEN_REFRESH);
-            }
-            catch(InterruptedException e){
-                e.printStackTrace();
-                break;
-            }
         } //while not connected
         final FutureTask query = new FutureTask(new Callable(){
             @Override

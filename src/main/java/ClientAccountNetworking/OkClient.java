@@ -20,8 +20,8 @@ import static java.lang.Integer.parseInt;
 public class OkClient {
     private final static String GOOD_RES = "VALID REQUEST";
     private final static String API_TOKEN = "fXtas7yB2HcIVoCyyQ78";
-    //Server: http://104.168.134.135:8080
-    private final static String SERVER_ADDRESS = "http://http://104.168.134.135:8080";
+    private final static String SERVER_ADDRESS = "http://104.168.134.135:8080";
+    //private final static String SERVER_ADDRESS = "http://localhost:8080";
     private static Gson gson = new Gson();
     //Source: https://stackoverflow.com/questions/4802887/gson-how-to-exclude-specific-fields-from-serialization-without-annotations
     private static Gson exGson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
@@ -206,8 +206,8 @@ public class OkClient {
         return 1;
     }
 
-    public int makeChatRequest(UserData current, String friendName) throws IOException{
-        if (url.equals("")) return -1;
+    public ChatRequest makeChatRequest(UserData current, String friendName) throws IOException{
+        if (url.equals("")) return null;
         ChatRequest chatRequest = new ChatRequest(current, friendName);
         chatRequest.API_token = API_TOKEN;
         String json = gson.toJson(chatRequest);
@@ -221,10 +221,13 @@ public class OkClient {
         int resStatus = response.code();
         if (resStatus >= 200 && resStatus < 400) {
             String res = response.body().string();
+            ResponseObj resObj = gson.fromJson(res, ResponseObj.class);
+            ChatRequest req = gson.fromJson(resObj.message, ChatRequest.class);
             System.out.println("Chat request res: " + res);
-            if (res.equals("request made")) return 0;
+            System.out.println("ChatRequest target: " + req.targetUser);
+            return req;
         }
-        return 1;
+        return null;
     }
 
     public int getChatRequests(UserData current, ArrayList<ChatRequest> requestList) throws IOException{

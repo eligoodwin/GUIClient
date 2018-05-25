@@ -85,14 +85,15 @@ public class PeerConnection {
         if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
         this.user = usr;
         this.request = req;
-        //Friend sent us a request
-        if (req.targetIP == null || req.targetIP == ""){
-            this.peerIP = req.requestingIPaddress;
-            this.peerPort = Integer.parseInt(req.requestingPort);
+        System.out.println("Test " + request.targetUser);
+        //Friend sent the request
+        if (request.targetUser.equals(user.username)){
+            this.peerIP = request.requestingIPaddress;
+            this.peerPort = Integer.parseInt(request.requestingPort);
         }
         //We sent the request
         else{
-            this.peerIP = req.targetIP;
+            this.peerIP = request.targetIP;
             this.peerPort = Integer.parseInt(req.targetPort);
         }
         this.localPort = Integer.parseInt(user.peerServerPort);
@@ -140,6 +141,7 @@ public class PeerConnection {
             connectionClient.connect(new InetSocketAddress(peerIP, peerPort), 15*1000);
             //TODO: share keys and verify tokens
             sendMessage("Initial message from user");
+            System.out.println(getMessage());
         } catch (SocketException s) {
             s.printStackTrace();
             return -1;
@@ -205,6 +207,11 @@ public class PeerConnection {
                 }
             }
         }
+    }
+
+    public String getMessage() throws IOException {
+        BufferedReader bufferedReader = getBuffer(connectionClient);
+        return bufferedReader.readLine();
     }
 
     public int sendMessage(String msg){

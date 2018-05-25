@@ -23,6 +23,7 @@ public class ConnectionManager {
     private static final String API_TOKEN =  "fXtas7yB2HcIVoCyyQ78";
     //Remote: "hwsrv-265507.hostwindsdns.com"
     private static final String STUN_ADDRESS = "hwsrv-265507.hostwindsdns.com";
+    //private static final String STUN_ADDRESS = "localhost";
     private static final int STUN_PORT = 15000;
     private static final int STUN_TIMEOUT = 10*1000;
     private static Gson gson = new Gson();
