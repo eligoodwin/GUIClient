@@ -55,7 +55,7 @@ public class LogonController {
             Parent root = loader.<Parent>load();
             FriendsController controller = loader.<FriendsController>getController();
             controller.initData(user);
-            Scene friendsScene = new Scene(root, 300, 550);
+            Scene friendsScene = new Scene(root);
             theStage.setScene(friendsScene);
         }
     }
@@ -87,7 +87,7 @@ public class LogonController {
             Parent root = loader.<Parent>load();
             ChatInterface controller = loader.<ChatInterface>getController();
             controller.setPeerTester(peer);
-            Scene chatScene = new Scene(root, 300, 550);
+            Scene chatScene = new Scene(root);
             theStage.setScene(chatScene);
         } catch (IOException e) {
             e.printStackTrace();
