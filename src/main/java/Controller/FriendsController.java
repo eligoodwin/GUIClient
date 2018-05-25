@@ -298,20 +298,15 @@ public class FriendsController{
         }
         //if connection succesful open chatInterface
         if (ok == 0){
-            Node source = (Node) actionEvent.getSource();
-            Stage theStage = (Stage)source.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatInterface.fxml"));
-            try {
-                Parent root = loader.<Parent>load();
+            Parent root;
+            try{
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatInterface.fxml"));
+                root = loader.<Parent>load();
                 ChatInterface controller = loader.<ChatInterface>getController();
                 controller.initController(peer);
-                Scene chatScene = new Scene(root, 300, 550);
-                theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
-                    public void handle(WindowEvent we) {
-                        controller.endConnection();
-                    }
-                });
-                theStage.setScene(chatScene);
+                Stage stage = new Stage();
+                stage.setScene(new Scene(root, 400, 150));
+                stage.show();
             }
             catch(IOException e){
                 e.printStackTrace();

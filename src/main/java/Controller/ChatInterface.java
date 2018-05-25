@@ -28,7 +28,16 @@ public class ChatInterface {
     void initController(PeerConnection peer){
         this.peer = peer;
         peer.setParentWindow(this);
-        peer.startReceiving();
+        //TODO: this needs to be after window is fully loaded to work
+        //  Sleep is a terrible hack
+        try {
+            Thread.sleep(3000);
+            peer.startReceiving();
+        }
+        catch(InterruptedException e){
+            e.printStackTrace();
+        }
+
     }
 
     void setPeerTester(PeerConnection peer){
