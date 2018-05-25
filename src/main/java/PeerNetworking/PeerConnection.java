@@ -142,6 +142,7 @@ public class PeerConnection {
             //TODO: share keys and verify tokens
             sendMessage("Initial message from user");
             System.out.println(getMessage());
+            System.out.flush();
         } catch (SocketException s) {
             s.printStackTrace();
             return -1;

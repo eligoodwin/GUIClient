@@ -49,10 +49,10 @@ public class ConnectionManager {
     }
 
     private void findNextSocket() throws SocketException {
-        nextSocket = new Socket();
         if (nextPort > 65535) throw new SocketException();
         while (true) {
             try {
+                nextSocket = new Socket();
                 nextSocket.setReuseAddress(true);
                 nextSocket.bind(new InetSocketAddress(nextPort));
                 nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
