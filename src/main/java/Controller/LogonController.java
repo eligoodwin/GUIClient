@@ -1,6 +1,7 @@
 package Controller;
 
 import ClientAccountNetworking.OkClient;
+import PeerNetworking.ConnectionManager;
 import QueryObjects.UserData;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -23,12 +24,14 @@ public class LogonController {
     private PasswordField logonPassword;
 
     public void gotoNextPage(ActionEvent actionEvent) throws Exception {
-        user = new UserData();
-        user.username = logonUsername.getText();
-        user.password = logonPassword.getText();
+        System.out.println("Logon controller clicked");
+        //logon
         attemptLogon();
 
-        System.out.println("Logon controller clicked");
+        //get ip info into stun server
+//        ConnectionManager connectionManager = new ConnectionManager(user);
+//        connectionManager.connectToStun();
+
         Node source = (Node) actionEvent.getSource();
         Stage theStage = (Stage) source.getScene().getWindow();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
