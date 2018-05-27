@@ -21,6 +21,7 @@ public class ChatInterface {
     private UserData user;
     private FriendData friend;
     private PeerConnection peer = null;
+
     @FXML
     public void initialize(){
     }
@@ -31,14 +32,7 @@ public class ChatInterface {
         this.peer = peer;
         peer.setParentWindow(this);
         //TODO: this needs to be after window is fully loaded to work
-        //  Sleep is a terrible hack
-        try {
-            Thread.sleep(3000);
-            peer.startReceiving();
-        }
-        catch(InterruptedException e){
-            e.printStackTrace();
-        }
+        peer.startReceiving();
 
     }
 

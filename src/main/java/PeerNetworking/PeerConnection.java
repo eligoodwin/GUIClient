@@ -184,11 +184,23 @@ public class PeerConnection {
     private void receiveMessages(){
         //TODO: parse object in receive message
         try {
+            //TODO: this is probably not a good hack - prevents trying to send
+            //  messages to windows that don't yet exist
+            Thread.sleep(1000);
+        }
+        catch(InterruptedException e){
+            e.printStackTrace();
+        }
+        try {
             BufferedReader input = getBuffer(connectionClient);
             while(getRunning()){
                 //TODO: check for ending connection
                 String msg = input.readLine();
-                if(msg == null) setRunning(false);
+                if(msg == null){
+                    setRunning(false);
+                    //TODO: call something in parentWindow to let user know friend disconnected
+                    parentWindow.sendMessageToWindow("Friend disconnected");
+                }
                 else if (parentWindow != null) {
                     ChatMessage message = gson.fromJson(msg, ChatMessage.class);
                     parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(message.message));
