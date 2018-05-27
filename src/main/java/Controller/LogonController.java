@@ -60,7 +60,6 @@ public class LogonController {
         } catch (IOException e) {
             System.out.println("Could not connect to attemptLogon route");
         }
-
         return false;
     }
 }
