@@ -49,6 +49,7 @@ public class ChatInterface {
 
     public void sendMessage(ActionEvent actionEvent) {
         String message = messageToSend.getText();
+        messageToSend.setText("");
         sendMessageToWindow(userIsSource(message));
         peer.sendMessage(message);
     }

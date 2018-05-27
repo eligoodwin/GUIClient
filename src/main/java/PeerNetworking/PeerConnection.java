@@ -190,7 +190,8 @@ public class PeerConnection {
                 String msg = input.readLine();
                 if(msg == null) setRunning(false);
                 else if (parentWindow != null) {
-                    parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
+                    ChatMessage message = gson.fromJson(msg, ChatMessage.class);
+                    parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(message.message));
                     System.out.println(msg);
                 }
             }
@@ -255,17 +256,14 @@ public class PeerConnection {
     public synchronized void stopConnection(){
         setRunning(false);
         if (incomingThread.isAlive()){
-            try {
                 incomingThread.interrupt();
-                incomingThread.join();
-            }
-            catch(InterruptedException e){
-                e.printStackTrace();
-            }
+                //incomingThread.join();
         }
         if (connectionClient != null){
             try {
-                connectionClient.close();
+                if(connectionClient.isConnected()) {
+                    connectionClient.close();
+                }
             }
             catch(IOException e){
                 e.printStackTrace();

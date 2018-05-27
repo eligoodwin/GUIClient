@@ -1,8 +1,8 @@
 package QueryObjects;
 
 public class ChatMessage {
-    private String token;
-    private String message;
+    public String token;
+    public String message;
     public ChatMessage(String t, String msg){
         token = t;
         message = msg;
