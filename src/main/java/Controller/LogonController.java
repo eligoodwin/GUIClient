@@ -26,39 +26,41 @@ public class LogonController {
     public void gotoNextPage(ActionEvent actionEvent) throws Exception {
         System.out.println("Logon controller clicked");
         //logon
-        attemptLogon();
+        if(attemptLogon()){
+            //get ip info into stun server
+            ConnectionManager connectionManager = new ConnectionManager(user);
+            connectionManager.connectToStun();
 
-        //get ip info into stun server
-//        ConnectionManager connectionManager = new ConnectionManager(user);
-//        connectionManager.connectToStun();
-
-        Node source = (Node) actionEvent.getSource();
-        Stage theStage = (Stage) source.getScene().getWindow();
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
-        Parent root = loader.<Parent>load();
-        FriendsController controller = loader.<FriendsController>getController();
-        controller.initData(user);
-        Scene friendsScene = new Scene(root);
-        theStage.setScene(friendsScene);
+            Node source = (Node) actionEvent.getSource();
+            Stage theStage = (Stage) source.getScene().getWindow();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
+            Parent root = loader.<Parent>load();
+            FriendsController controller = loader.<FriendsController>getController();
+            controller.initData(user);
+            Scene friendsScene = new Scene(root);
+            theStage.setScene(friendsScene);
+        }
+        else{
+            //display red text warning bad credentials
+            System.out.println("bad creds");
+        }
     }
 
     //used to attemptLogon the user
-    private void attemptLogon(){
+    private boolean attemptLogon(){
         final int VALID_HTTP = 0;
-        boolean validCredentials = false;
         user = new UserData();
-        while(!validCredentials){
-            user.username = logonUsername.getText();
-            user.password = logonPassword.getText();
-            try {
-                int httpStatus = client.logon(user);
-                if(VALID_HTTP == httpStatus ){
-                    validCredentials = true;
-                    return;
-                }
-            } catch (IOException e) {
-                System.out.println("Could not connect to attemptLogon route");
+        user.username = logonUsername.getText();
+        user.password = logonPassword.getText();
+        try {
+            int httpStatus = client.logon(user);
+            if(VALID_HTTP == httpStatus ){
+                return true;
             }
+        } catch (IOException e) {
+            System.out.println("Could not connect to attemptLogon route");
         }
+
+        return false;
     }
 }

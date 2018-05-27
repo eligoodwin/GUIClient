@@ -52,22 +52,26 @@ public class ConnectionManager {
     }
 
     public void connectToStun(){
-        nextSocket = new Socket();
-        try {
-            nextSocket.setReuseAddress(true);
-            nextSocket.bind(new InetSocketAddress(nextPort));
-            nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
-            STUNRegistration validation = new STUNRegistration(user, API_TOKEN);
-            String message = gson.toJson(validation);
-            sendMessage(message);
-            String response = getMessage();
-            System.out.println("RESPONSE FROM STUN: " + response);
-            nextSocket.close();
-
-        } catch (IOException e) {
-            System.out.println("Could not connect to STUN server on port incrementing");
-
-        }
+        boolean badPort = true;
+        do{
+            try {
+                nextSocket = new Socket();
+                nextSocket.setReuseAddress(true);
+                nextSocket.bind(new InetSocketAddress(nextPort));
+                nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
+                STUNRegistration validation = new STUNRegistration(user, API_TOKEN);
+                String message = gson.toJson(validation);
+                sendMessage(message);
+//                String response = getMessage(); ? response from stun server ?
+//                String response = "nope";
+//                System.out.printf("RESPONSE FROM STUN: %s\n", response);
+                badPort = false;
+                nextSocket.close();
+            } catch (IOException e) {
+                System.out.println("Could not connect to STUN server on port incrementing");
+                getNewPort();
+            }
+        }while(badPort);
     }
 
     private void findNextSocket() throws SocketException {
