@@ -7,8 +7,6 @@ import PeerNetworking.PeerConnection;
 import QueryObjects.ChatRequest;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
-import com.sun.org.apache.xpath.internal.operations.Mod;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -29,7 +27,6 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 
-import java.awt.*;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -38,7 +35,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
 //Source for ListView: https://www.youtube.com/watch?v=9uubyM6oHAY
@@ -47,8 +43,7 @@ public class FriendsController{
     private static final long REQ_LISTEN_REFRESH = 2000;
     private static final long MAX_REQUEST_DIFF = 10000;
     private LocalAsymmetricCrypto crypto = null;
-    //0 for open, 1 for attempting connection, 2 for connected
-    private int connectionStatus = 0;
+    private boolean running = true;
     private boolean acceptConnection = false;
     private OkClient client = null;
     private UserData user = null;
@@ -57,6 +52,9 @@ public class FriendsController{
     private ArrayList<FriendData> friends = new ArrayList<>();
     private Thread requestHandler = null;
     private PeerConnection nextPeer = null;
+    private ChatRequest acceptedRequest = null;
+    private ConnectionManager manager = null;
+    private int nextPort = 9000;
 
     @FXML
     ListView<FriendData> friendsList = null;
@@ -71,12 +69,12 @@ public class FriendsController{
         return user;
     }
 
-    private synchronized int getConnectionStatus() {
-        return connectionStatus;
+    private synchronized boolean getRunning() {
+        return running;
     }
 
-    private synchronized void setConnectionStatus(int connectionStatus) {
-        this.connectionStatus = connectionStatus;
+    private synchronized void setRunning(boolean run) {
+        this.running = run;
     }
 
     public void setAcceptConnection(boolean acceptConnection) {
@@ -112,7 +110,7 @@ public class FriendsController{
                 if(friendStatus == 0){
                     this.setItem(null);
                     //friendsList.getItems().remove(friend);
-                    int index = findFriend(friend);
+                    int index = findFriendIndex(friend);
                     if (index >= 0) fList.remove(index);
                     //friendsList.refresh();
                     this.setContextMenu(null);
@@ -139,7 +137,7 @@ public class FriendsController{
                 //blocked or rejected request
                 else {
                     this.setItem(null);
-                    int index = findFriend(friend);
+                    int index = findFriendIndex(friend);
                     if (index >= 0) fList.remove(index);
                     //friendsList.refresh();
                     System.out.println("Request status: " + friend.requestStatus);
@@ -148,7 +146,17 @@ public class FriendsController{
         }//end update
     }
 
-    int findFriend(FriendData friend){
+    FriendData findFriend(String friendName){
+        if (fList.size() < 1) return null;
+        for (int i = 0; i < fList.size(); i++){
+            FriendData temp = fList.get(i);
+            if (temp.friend_name.equals(friendName)) return temp;
+        }
+        //not found
+        return null;
+    }
+
+    int findFriendIndex(FriendData friend){
         if (fList.size() < 1) return -1;
         for (int i = 0; i < fList.size(); i++){
             FriendData temp = fList.get(i);
@@ -179,9 +187,8 @@ public class FriendsController{
         System.out.println("Trace: in initialize");
     }
 
-    //TODO: does this need to be synchronized?
-    void updateFriendsList(){
-        if (getUser() == null) return;
+    synchronized int updateFriendsList(){
+        if (getUser() == null) return -1;
         if (fList.size() != 0) fList.clear();
         if (friendsList != null) friendsList.getItems().clear();
         if (friends != null) friends.clear();
@@ -207,13 +214,37 @@ public class FriendsController{
             });
             friendsList.refresh();
         }
+        return 0;
     }
 
     void initData(UserData usr){
         System.out.println("Trace: in initData");
         user = usr;
+        try {
+            manager = ConnectionManager.getConnectionManager(user);
+            nextPort = manager.getNextSocket();
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
         updateFriendsList();
+        startRequestHandler();
+    }
+
+    private void startRequestHandler(){
+        if(requestHandler != null){
+            if (requestHandler.isAlive()){
+                requestHandler.interrupt();
+                try {
+                    requestHandler.join();
+                }
+                catch(InterruptedException e){
+                    e.printStackTrace();
+                }
+            }
+        }
         requestHandler = new Thread(this::listenForRequests);
+        requestHandler.setDaemon(true);
         requestHandler.start();
     }
 
@@ -270,51 +301,26 @@ public class FriendsController{
         }
     }
 
-    public void msgFriend(ActionEvent actionEvent){
+    public void requestChat(ActionEvent actionEvent){
+        //kill requestHandler thread to avoid interference
+        if (requestHandler.isAlive()) requestHandler.interrupt();
         //get selected friend from listview
         FriendData friend = friendsList.getSelectionModel().getSelectedItem();
         //check if friend is accepted
         if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) return;
         //TODO: popup window letting person know you can't connect to people that aren't friends
+
         ChatRequest req;
         try {
             req = client.makeChatRequest(getUser(), friend.friend_name);
         }
         catch(IOException e){
             e.printStackTrace();
+            startRequestHandler();
             return;
             //TODO: popup error message
         }
-        //feed friend ip and port to PeerConnection
-        int ok = 1;
-        PeerConnection peer = null;
-        try {
-            peer = new PeerConnection(getUser(), req);
-            //attempt connection
-            ok = peer.connectNatPunch();
-        }
-        catch(IOException e){
-            e.printStackTrace();
-        }
-        //if connection succesful open chatInterface
-        if (ok == 0){
-            Parent root;
-            try{
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatInterface.fxml"));
-                root = loader.<Parent>load();
-                ChatInterface controller = loader.<ChatInterface>getController();
-                controller.initController(peer);
-                Stage stage = new Stage();
-                stage.setScene(new Scene(root, 400, 150));
-                stage.show();
-            }
-            catch(IOException e){
-                e.printStackTrace();
-                System.out.println("Exception in msgFriend");
-            }
-        }
-        //else popup
-        else System.out.println("Could not open peer connection. Error: " + ok);
+        attemptConnection(req);
     }
 
     // old chat request method - natless
@@ -343,7 +349,7 @@ public class FriendsController{
             try {
                 Parent root = loader.<Parent>load();
                 ChatInterface controller = loader.<ChatInterface>getController();
-                controller.initController(peer);
+                controller.initController(peer, user, friend);
                 Scene chatScene = new Scene(root, 300, 550);
                 theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
                     public void handle(WindowEvent we) {
@@ -354,7 +360,7 @@ public class FriendsController{
             }
             catch(IOException e){
                 e.printStackTrace();
-                System.out.println("Exception in msgFriend");
+                System.out.println("Exception in requestChat");
             }
         }
         //else popup
@@ -388,7 +394,11 @@ public class FriendsController{
 
     //Should only ever be called from checkRequests
     private synchronized void removeStaleRequests(){
-        //TODO:
+        for(ChatRequest req : chatRequests){
+            if (getDateDifference(req.date) > MAX_REQUEST_DIFF){
+                chatRequests.remove(req);
+            }
+        }
     }
 
     //Should only be called by the checkRequests function
@@ -418,7 +428,7 @@ public class FriendsController{
     //Attempt connection
     //  returns 0 if no connection attempted
     //  returns 1 if connection is processing
-    private int connectToRequest(ChatRequest req){
+    private int getUserRequestInput(ChatRequest req){
         //TODO: This may be its own thread eventually
         //TODO: set connection status?
         System.out.println("Trace connect to request");
@@ -447,11 +457,32 @@ public class FriendsController{
         else{ System.out.println("Connection refused"); return 0;}
     }
 
+    private FriendData findFriendFromRequest(ChatRequest req){
+        String friendName = "";
+        //This user accepted the request
+        if (req.targetUser.equals(user.username)){
+            friendName = req.requestingUser;
+        }
+        //This user sent the request
+        else{
+            friendName = req.targetUser;
+        }
+        return findFriend(friendName);
+    }
+
     private int attemptConnection(ChatRequest req){
-        Parent root;
+        if (requestHandler.isAlive()){
+            try {
+                requestHandler.interrupt();
+                requestHandler.join();
+            }
+            catch(InterruptedException e){
+                e.printStackTrace();
+            }
+        }
         try {
             nextPeer = new PeerConnection(user, req);
-            int status = nextPeer.connectNatPunch();
+            int status = nextPeer.connectNatPunch(nextPort);
             //TODO: handle different status
             if (status != 0) nextPeer = null;
         }
@@ -459,45 +490,15 @@ public class FriendsController{
             e.printStackTrace();
             nextPeer = null;
         }
-        /*
-        try{
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/attemptConnection.fxml"));
-            root = loader.<Parent>load();
-            AttemptConnectionController controller = loader.<AttemptConnectionController>getController();
-            controller.initData(this);
-            Stage stage = new Stage();
-            stage.setTitle("Attempting Connection");
-            stage.setScene(new Scene(root, 400, 150));
-            setAcceptConnection(false);
-            // Does not work - old connection popup
-            stage.setOnShown(new EventHandler<WindowEvent>(){
-                @Override
-                public void handle(WindowEvent event){
-                    if (event.getEventType() == WindowEvent.WINDOW_SHOWN) {
-                        controller.connect();
-                    }
-                }
-            });
-            stage.addEventHandler(WindowEvent.WINDOW_SHOWN, new EventHandler<WindowEvent>(){
-                @Override
-                public void handle(WindowEvent event){
-                    controller.connect();
-                }
-            });
-
-            //Source: https://stackoverflow.com/a/34071134/2487475
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.showAndWait();
-            System.out.println("Trace: end of attemptConnection");
-        }
-        catch(IOException e){
-            e.printStackTrace();
-            //TODO: handle this better
+        //Connection success
+        if (nextPeer != null){
+            openChatWindow(findFriendFromRequest(req));
             return 0;
         }
-        */
-        //Connection success
-        if (nextPeer != null){ return 0;}
+        else{
+            nextPort = manager.getNextSocket();
+            startRequestHandler();
+        }
         return 1;
     }
 
@@ -513,17 +514,20 @@ public class FriendsController{
         return false;
     }
 
-    private synchronized int handleRequests(ArrayList<ChatRequest> newRequests){
+    private synchronized ChatRequest handleRequests(ArrayList<ChatRequest> newRequests){
+        //For each request check if it occurred within the desired time frame
+        //  and it has not been processed before
         for(ChatRequest req : newRequests) {
             int check = getDateDifference(req.date);
             boolean contains = requestsContains(req);
             if (check > 0 && !contains) {
                 chatRequests.add(req);
+                //
                 //Source: https://stackoverflow.com/a/13804542/2487475
                 final FutureTask query = new FutureTask(new Callable(){
                         @Override
                         public Object call() throws Exception{
-                            return connectToRequest(req);
+                            return getUserRequestInput(req);
                         }
                     });
                     Platform.runLater(query);
@@ -534,22 +538,16 @@ public class FriendsController{
                 catch(Exception e){
                     e.printStackTrace();
                 }
-                //Connection accepted, now attempt connection
+                //Request accepted, return request to attemptConnection
                 if (check == 1){
-                    check = attemptConnection(req);
-                    //connection accepted and connected
-                    if (check == 0){
-                        System.out.println("Connection accepted and connected");
-                        //TODO: open chat window with PeerConnection
-                        return 1;
-                    }
+                        return req;
                 }// connection accepted, attempt done
             }//within timeframe - accept/reject
         }
-        return 0;
+        return null;
     }
 
-    private int openChatWindow(){
+    private int openChatWindow(FriendData friend){
         //TODO: don't need this if multiple connections?
         try {
             if (requestHandler != null) requestHandler.join(500);
@@ -562,7 +560,7 @@ public class FriendsController{
         try {
             Parent root = loader.<Parent>load();
             ChatInterface controller = loader.<ChatInterface>getController();
-            controller.initController(nextPeer);
+            controller.initController(nextPeer, user, friend);
             Scene chatScene = new Scene(root, 300, 550);
             theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
                 public void handle(WindowEvent we) {
@@ -573,7 +571,7 @@ public class FriendsController{
         }
         catch(IOException e){
             e.printStackTrace();
-            System.out.println("Exception in msgFriend");
+            System.out.println("Exception in requestChat");
             return 1;
         }
 
@@ -588,16 +586,32 @@ public class FriendsController{
             ArrayList<ChatRequest> newRequests = new ArrayList<>();
             if(threadUser == null) return;
             //while not connected - this should change for multiple connections functionality
-            while(getConnectionStatus() != 2){
-                //if not attempting a connection
-                if (getConnectionStatus() < 1){
-                    //
-                    if(loopCount > 5){ removeStaleRequests(); loopCount = 0; }
+            while(getRunning()){
+                    if(loopCount > 5){
+                        removeStaleRequests();
+                        loopCount = 0;
+                        final FutureTask update = new FutureTask(new Callable(){
+                            @Override
+                            public Object call() throws Exception{
+                                return updateFriendsList();
+                            }
+                        });
+                        Platform.runLater(update);
+                        try {
+                            update.get();
+                        }
+                        catch(Exception e){
+                            e.printStackTrace();
+                        }
+                    }
                     newRequests.clear();
                     try {
                         threadClient.getChatRequests(threadUser, newRequests);
-                        int connectionAccepted = handleRequests(newRequests);
-                        if (connectionAccepted == 1) setConnectionStatus(2);
+                        acceptedRequest = handleRequests(newRequests);
+                        if(acceptedRequest != null){
+                            setRunning(false);
+                            break;
+                        }
                     }
                     catch(IOException e){
                         e.printStackTrace();
@@ -605,7 +619,6 @@ public class FriendsController{
                         break;
                     }
                     loopCount++;
-                } //if connection status < 1
                 //always sleep
                 try {
                     Thread.sleep(REQ_LISTEN_REFRESH);
@@ -614,16 +627,15 @@ public class FriendsController{
                     e.printStackTrace();
                     break;
                 }
-        } //while not connected
-        final FutureTask query = new FutureTask(new Callable(){
+        } //while running
+        System.out.println("Exitted checking for chat requests");
+        //Tell the main JavaFX thread to call the attemptConnection function
+        final FutureTask update = new FutureTask(new Callable(){
             @Override
             public Object call() throws Exception{
-                return openChatWindow();
+                return attemptConnection(acceptedRequest);
             }
         });
-        Platform.runLater(query);
-        //TODO: open chat window
-        System.out.println("Exitted checking for chat requests");
     }
 
 }

@@ -25,7 +25,9 @@ public class ChatInterface {
     public void initialize(){
     }
 
-    void initController(PeerConnection peer){
+    void initController(PeerConnection peer, UserData user, FriendData friend){
+        this.user = user;
+        this.friend = friend;
         this.peer = peer;
         peer.setParentWindow(this);
         //TODO: this needs to be after window is fully loaded to work

@@ -42,7 +42,7 @@
          <children>
             <Button
                     fx:id="friendsMsg"
-                    onAction="#msgFriend"
+                    onAction="#requestChat"
                     alignment="CENTER"
                     mnemonicParsing="false"
                     prefHeight="48.0"

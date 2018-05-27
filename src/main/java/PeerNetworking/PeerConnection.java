@@ -25,7 +25,7 @@ public class PeerConnection {
     private boolean running = true;
     private Socket connectionClient = null;
     private ServerSocket sock = null;
-    private Thread incomingThread;
+    private Thread incomingThread = null;
     private Thread testServer;
     private String peerIP;
     private ChatInterface parentWindow = null;
@@ -55,6 +55,7 @@ public class PeerConnection {
         try {
             connectionClient = sock.accept();
             incomingThread = new Thread(this::startReceiving);
+            incomingThread.setDaemon(true);
             incomingThread.start();
         }
         catch(IOException e){
@@ -129,9 +130,8 @@ public class PeerConnection {
         testServer.start();
     }
 
-    public int connectNatPunch(){
-        localPort = manager.getNextSocket();
-        if (localPort == -1) return 1;
+    public int connectNatPunch(int port){
+        localPort = port;
         try {
             connectionClient = new Socket();
             connectionClient.setReuseAddress(true);
@@ -188,24 +188,23 @@ public class PeerConnection {
             while(getRunning()){
                 //TODO: check for ending connection
                 String msg = input.readLine();
-                if(parentWindow != null){
+                if(msg == null) setRunning(false);
+                else if (parentWindow != null) {
                     parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
+                    System.out.println(msg);
                 }
-                System.out.println(msg);
             }
         }
         catch(IOException e){
             e.printStackTrace();
         }
-        finally{
-            if (connectionClient != null){
-                try{
-                    System.out.println("Closing connection");
-                    connectionClient.close();
-                }
-                catch(IOException e){
-                    e.printStackTrace();
-                }
+        if (connectionClient != null){
+            try{
+                System.out.println("Closing connection");
+                connectionClient.close();
+            }
+            catch(IOException e){
+                e.printStackTrace();
             }
         }
     }
@@ -254,18 +253,17 @@ public class PeerConnection {
     }
 
     public synchronized void stopConnection(){
-        if (getRunning()) {
-            setRunning(false);
-            if (incomingThread.isAlive()){
-                try {
-                    incomingThread.join();
-                }
-                catch(InterruptedException e){
-                    e.printStackTrace();
-                }
+        setRunning(false);
+        if (incomingThread.isAlive()){
+            try {
+                incomingThread.interrupt();
+                incomingThread.join();
+            }
+            catch(InterruptedException e){
+                e.printStackTrace();
             }
         }
-        else if (connectionClient != null){
+        if (connectionClient != null){
             try {
                 connectionClient.close();
             }
