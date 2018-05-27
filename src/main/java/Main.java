@@ -18,7 +18,7 @@ public class Main extends Application {
         primaryStage.setScene(new Scene(root));
         primaryStage.show();
 
-        //closes down the program completely when the program exits
+        //closes down the program completely when the program exits -- still need to fix for chat client
         primaryStage.setOnCloseRequest(e -> {
                     Platform.exit();
                     System.exit(0);

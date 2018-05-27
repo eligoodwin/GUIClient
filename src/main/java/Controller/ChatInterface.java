@@ -26,10 +26,12 @@ public class ChatInterface {
     public void initialize(){
     }
 
-    void initController(PeerConnection peer){
+    void initController(PeerConnection peer, UserData user, FriendData friend){
         this.peer = peer;
         peer.setParentWindow(this);
         peer.startReceiving();
+        this.user = user;
+        this.friend = friend;
     }
 
     void setPeerTester(PeerConnection peer){
@@ -39,6 +41,7 @@ public class ChatInterface {
 
     public void sendMessage(ActionEvent actionEvent) {
         String message = messageToSend.getText();
+        messageToSend.clear();
         sendMessageToWindow(userIsSource(message));
         peer.sendMessage(message);
     }
@@ -51,17 +54,16 @@ public class ChatInterface {
         }
     }
 
-
-
     public void sendMessageToWindow(String message){
         messageWindow.appendText(message);
     }
 
+    //both need to be fixed on init
     private String userIsSource(String message){
-        return String.format(user.username + " >> \t%s\n", message);
+        return String.format("%s >> %s\n", user.username, message);
     }
 
     public String userIsNotSource(String message){
-        return String.format(friend.friend_name + " << \t%s\n", message);
+        return String.format("%s << %s\n", friend.friend_name, message);
     }
 }

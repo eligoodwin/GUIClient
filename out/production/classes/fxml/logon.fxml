@@ -5,7 +5,9 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.PasswordField?>
-<GridPane fx:controller="Controller.LogonController"
+<GridPane
+        maxHeight="200" maxWidth="400" prefHeight="200" prefWidth="400"
+        fx:controller="Controller.LogonController"
           xmlns:fx="http://javafx.com/fxml" alignment="center" hgap="10" vgap="10">
     <Text text="Logon"
           GridPane.rowIndex="0"

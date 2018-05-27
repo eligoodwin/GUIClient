@@ -285,7 +285,7 @@ public class FriendsController{
             try {
                 Parent root = loader.<Parent>load();
                 ChatInterface controller = loader.<ChatInterface>getController();
-                controller.initController(peer);
+                controller.initController(peer, user, friend);
                 Scene chatScene = new Scene(root);
                 theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
                     public void handle(WindowEvent we) {
@@ -504,7 +504,7 @@ public class FriendsController{
         try {
             Parent root = loader.<Parent>load();
             ChatInterface controller = loader.<ChatInterface>getController();
-            controller.initController(nextPeer);
+            controller.initController(nextPeer, user, null);
             Scene chatScene = new Scene(root);
             theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
                 public void handle(WindowEvent we) {

@@ -51,6 +51,7 @@ public class ConnectionManager {
         nextPort++;
     }
 
+    //will need to be modified to send JWT with user
     public void connectToStun(){
         boolean badPort = true;
         do{
