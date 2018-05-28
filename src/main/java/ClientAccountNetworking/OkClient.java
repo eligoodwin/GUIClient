@@ -209,15 +209,14 @@ public class OkClient {
         return 1;
     }
 
-    public int makeChatRequest(UserData current, String friendName) throws IOException{
-        if (url.equals("")) return -1;
+    public ChatRequest makeChatRequest(UserData current, String friendName) throws IOException{
+        if (url.equals("")) return null;
         ChatRequest chatRequest = new ChatRequest(current, friendName);
         chatRequest.API_token = API_TOKEN;
         String json = gson.toJson(chatRequest);
         System.out.println("Chat request: " + json);
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
-                .addHeader("Authorization", "Bearer" + current.token)
                 .url(url + "/user/" + current.id + "/chat")
                 .post(body)
                 .build();
@@ -225,10 +224,13 @@ public class OkClient {
         int resStatus = response.code();
         if (resStatus >= 200 && resStatus < 400) {
             String res = response.body().string();
+            ResponseObj resObj = gson.fromJson(res, ResponseObj.class);
+            ChatRequest req = gson.fromJson(resObj.message, ChatRequest.class);
             System.out.println("Chat request res: " + res);
-            if (res.equals("request made")) return 0;
+            System.out.println("ChatRequest target: " + req.targetUser);
+            return req;
         }
-        return 1;
+        return null;
     }
 
     public int getChatRequests(UserData current, ArrayList<ChatRequest> requestList) throws IOException{
