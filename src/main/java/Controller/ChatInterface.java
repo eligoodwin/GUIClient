@@ -52,6 +52,7 @@ public class ChatInterface {
         String message = messageToSend.getText();
         messageToSend.clear();
         sendMessageToWindow(userIsSource(message));
+        //encrypt here
         peer.sendMessage(message);
     }
 
