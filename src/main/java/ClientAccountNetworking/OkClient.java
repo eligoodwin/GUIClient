@@ -217,6 +217,7 @@ public class OkClient {
         System.out.println("Chat request: " + json);
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
+                .addHeader("Authorization", "Bearer" + current.token)
                 .url(url + "/user/" + current.id + "/chat")
                 .post(body)
                 .build();
