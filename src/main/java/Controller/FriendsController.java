@@ -320,51 +320,7 @@ public class FriendsController{
             return;
             //TODO: popup error message
         }
-        attemptConnection(req);
-    }
-
-    // old chat request method - natless
-    public void msgFriendNatless(ActionEvent actionEvent){
-        //get selected friend from listview
-        FriendData friend = friendsList.getSelectionModel().getSelectedItem();
-        //check if friend is accepted
-        if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) return;
-        //TODO: popup window letting person know you can't connect to people that aren't friends
-        //feed friend ip and port to PeerConnection
-        int ok = 1;
-        PeerConnection peer = null;
-        try {
-            peer = new PeerConnection(getUser(), friend);
-            //attempt connection
-            ok = peer.connectNatless();
-        }
-        catch(IOException e){
-            e.printStackTrace();
-        }
-        //if connection succesful open chatInterface
-        if (ok == 0){
-            Node source = (Node) actionEvent.getSource();
-            Stage theStage = (Stage)source.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatInterface.fxml"));
-            try {
-                Parent root = loader.<Parent>load();
-                ChatInterface controller = loader.<ChatInterface>getController();
-                controller.initController(peer, user, friend);
-                Scene chatScene = new Scene(root, 300, 550);
-                theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
-                    public void handle(WindowEvent we) {
-                        controller.endConnection();
-                    }
-                });
-                theStage.setScene(chatScene);
-            }
-            catch(IOException e){
-                e.printStackTrace();
-                System.out.println("Exception in requestChat");
-            }
-        }
-        //else popup
-        else System.out.println("Could not open peer connection. Error: " + ok);
+        openChatWindow(req);
     }
 
     public void addFriend(){
@@ -470,38 +426,6 @@ public class FriendsController{
         return findFriend(friendName);
     }
 
-    private int attemptConnection(ChatRequest req){
-        if (requestHandler.isAlive()){
-            try {
-                requestHandler.interrupt();
-                requestHandler.join();
-            }
-            catch(InterruptedException e){
-                e.printStackTrace();
-            }
-        }
-        try {
-            nextPeer = new PeerConnection(user, req);
-            int status = nextPeer.connectNatPunch(nextPort);
-            //TODO: handle different status
-            if (status != 0) nextPeer = null;
-        }
-        catch(IOException e){
-            e.printStackTrace();
-            nextPeer = null;
-        }
-        //Connection success
-        if (nextPeer != null){
-            openChatWindow(findFriendFromRequest(req));
-            return 0;
-        }
-        else{
-            nextPort = manager.getNextSocket();
-            startRequestHandler();
-        }
-        return 1;
-    }
-
     private synchronized boolean requestsContains(ChatRequest req){
         if (chatRequests.size() == 0) return false;
         for (ChatRequest current : chatRequests){
@@ -547,7 +471,7 @@ public class FriendsController{
         return null;
     }
 
-    private int openChatWindow(FriendData friend){
+    synchronized private int openChatWindow(ChatRequest req){
         //TODO: don't need this if multiple connections?
         try {
             if (requestHandler != null) requestHandler.join(500);
@@ -555,12 +479,15 @@ public class FriendsController{
         catch(InterruptedException e){
             e.printStackTrace();
         }
-        Stage theStage = (Stage)friendsList.getScene().getWindow();
+        //Use current stage to hide friends window
+        //Stage theStage = (Stage)friendsList.getScene().getWindow();
+        //Use new stage to popup new window
+        Stage theStage = new Stage();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatInterface.fxml"));
         try {
             Parent root = loader.<Parent>load();
             ChatInterface controller = loader.<ChatInterface>getController();
-            controller.initController(nextPeer, user, friend);
+            controller.startConnection(user, findFriendFromRequest(req), req, nextPort);
             Scene chatScene = new Scene(root, 300, 550);
             theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
                 public void handle(WindowEvent we) {
@@ -568,6 +495,8 @@ public class FriendsController{
                 }
             });
             theStage.setScene(chatScene);
+            theStage.show();
+            nextPort = manager.getNextSocket();
         }
         catch(IOException e){
             e.printStackTrace();
@@ -609,8 +538,13 @@ public class FriendsController{
                         threadClient.getChatRequests(threadUser, newRequests);
                         acceptedRequest = handleRequests(newRequests);
                         if(acceptedRequest != null){
-                            setRunning(false);
-                            break;
+                            final FutureTask update = new FutureTask(new Callable(){
+                                @Override
+                                public Object call() throws Exception{
+                                    return openChatWindow(acceptedRequest);
+                                }
+                            });
+                            Platform.runLater(update);
                         }
                     }
                     catch(IOException e){
@@ -630,12 +564,7 @@ public class FriendsController{
         } //while running
         System.out.println("Exitted checking for chat requests");
         //Tell the main JavaFX thread to call the attemptConnection function
-        final FutureTask update = new FutureTask(new Callable(){
-            @Override
-            public Object call() throws Exception{
-                return attemptConnection(acceptedRequest);
-            }
-        });
+
     }
 
 }

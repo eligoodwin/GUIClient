@@ -46,6 +46,10 @@ public class PeerConnection {
         running = set;
     }
 
+    public void setParentWindow(ChatInterface window) { parentWindow = window;}
+
+    public void setFriend(FriendData friend){this.friend = friend;}
+
     private synchronized void setConnectionClient(Socket connection){
         connectionClient = connection;
     }
@@ -67,10 +71,6 @@ public class PeerConnection {
         catch(IOException e){
             e.printStackTrace();
         }
-    }
-
-    public void setParentWindow(ChatInterface window){
-        parentWindow = window;
     }
 
     public PeerConnection(UserData usr, FriendData frnd) throws IOException {
@@ -177,16 +177,22 @@ public class PeerConnection {
     }
 
     public void startReceiving(){
+        System.out.println("Starting reception");
         incomingThread = new Thread(this::receiveMessages);
+        incomingThread.setDaemon(true);
         incomingThread.start();
     }
 
     private void receiveMessages(){
+        //Trace:
+       if(connectionClient.isConnected()) System.out.println("Is connected in receive messages");
+       if(parentWindow == null) System.out.println("No parent window");
         //TODO: parse object in receive message
         try {
             //TODO: this is probably not a good hack - prevents trying to send
             //  messages to windows that don't yet exist
             Thread.sleep(1000);
+            parentWindow.sendMessageToWindow("Starting reception");
         }
         catch(InterruptedException e){
             e.printStackTrace();
@@ -196,14 +202,19 @@ public class PeerConnection {
             while(getRunning()){
                 //TODO: check for ending connection
                 String msg = input.readLine();
-                if(msg == null){
+                if(!connectionClient.isConnected()){
                     setRunning(false);
                     //TODO: call something in parentWindow to let user know friend disconnected
                     parentWindow.sendMessageToWindow("Friend disconnected");
                 }
                 else if (parentWindow != null) {
-                    ChatMessage message = gson.fromJson(msg, ChatMessage.class);
-                    parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(message.message));
+                    if(friend.friend_name.equals("jadenBot")){
+                        parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
+                    }
+                    else {
+                        ChatMessage message = gson.fromJson(msg, ChatMessage.class);
+                        parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(message.message));
+                    }
                     System.out.println(msg);
                 }
             }

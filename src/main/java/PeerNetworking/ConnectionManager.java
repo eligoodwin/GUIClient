@@ -71,7 +71,9 @@ public class ConnectionManager {
             e.printStackTrace();
             return -1;
         }
-        return nextPort;
+        int temp = nextPort;
+        nextPort++; //increment to avoid conflicts
+        return temp;
     }
 
     //
