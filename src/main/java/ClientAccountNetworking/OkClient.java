@@ -72,13 +72,13 @@ public class OkClient {
                 .post(body)
                 .build();
         Response response = client.newCall(request).execute();
+        json = response.body().string();
+        System.out.println(json);
         int resStatus = response.code();
         if (resStatus >= 200 && resStatus < 400) {
-            json = response.body().string();
-            System.out.println(json);
             ResponseObj resObj = gson.fromJson(json, ResponseObj.class);
             UserData tempUser = gson.fromJson(resObj.message.getAsJsonObject("userDetails"), UserData.class);
-            user.token = tempUser.token;
+            user.token = resObj.message.get("token").getAsString();
             user.id = tempUser.id;
             return 0;
         }
@@ -240,9 +240,10 @@ public class OkClient {
                 .url(url + "/user/" + current.id + "/chat")
                 .build();
         Response response = client.newCall(request).execute();
+        String res = response.body().string();
+        System.out.println(res);
         int resStatus = response.code();
         if (resStatus >= 200 && resStatus < 400) {
-            String res = response.body().string();
             //System.out.println("Chat requests: " + res);
             ResponseArray resObj = gson.fromJson(res, ResponseArray.class);
             if (!resObj.status.equals("VALID")) return 1;
