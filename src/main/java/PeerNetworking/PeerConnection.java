@@ -132,24 +132,28 @@ public class PeerConnection {
 
     public int connectNatPunch(int port){
         localPort = port;
-        try {
-            connectionClient = new Socket();
-            connectionClient.setReuseAddress(true);
-            System.out.println("Connect Punch, binding port: " + localPort);
-            connectionClient.bind(new InetSocketAddress(localPort));
-            System.out.println("Attempting connection, ip:port " + peerIP + ":" + peerPort);
-            connectionClient.connect(new InetSocketAddress(peerIP, peerPort), 15*1000);
-            //TODO: share keys and verify tokens
-            sendMessage("Initial message from user");
-            System.out.println(getMessage());
-            System.out.flush();
-        } catch (SocketException s) {
-            s.printStackTrace();
-            return -1;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return -1;
-        }
+        int attemptCount = 0;
+        do {
+            try {
+                connectionClient = new Socket();
+                connectionClient.setReuseAddress(true);
+                System.out.println("Connect Punch, binding port: " + localPort);
+                connectionClient.bind(new InetSocketAddress(localPort));
+                System.out.println("Attempting connection, ip:port " + peerIP + ":" + peerPort);
+                connectionClient.connect(new InetSocketAddress(peerIP, peerPort), 15 * 1000);
+                //TODO: share keys and verify tokens
+                sendMessage("Initial message from user");
+                System.out.println(getMessage());
+                System.out.flush();
+            } catch (SocketException s) {
+                s.printStackTrace();
+                return -1;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return -1;
+            }
+            attemptCount++;
+        }while(!connectionClient.isConnected() && attemptCount < 10);
         return 0;
     }
 

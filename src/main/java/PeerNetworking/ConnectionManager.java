@@ -29,7 +29,7 @@ public class ConnectionManager {
     private static Gson gson = new Gson();
     private UserData user = null;
     private ArrayList<Socket> openSockets = new ArrayList<>();
-    private int nextPort = 27000;
+    private int nextPort = 59870;
     private Socket nextSocket = null;
 
 
