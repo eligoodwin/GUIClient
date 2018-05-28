@@ -22,7 +22,7 @@ public class SplashController {
         Parent root = FXMLLoader.load(getClass().getResource("/fxml/createAccount.fxml"));
         Scene logonScene = new Scene(root, 400, 200);
         theStage.setScene(logonScene);
-        System.out.println("logon was clicked");
+        System.out.println("account creation was clicked");
 
     }
 

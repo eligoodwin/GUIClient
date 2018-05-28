@@ -74,6 +74,7 @@ public class OkClient {
         Response response = client.newCall(request).execute();
         int resStatus = response.code();
         if (resStatus >= 200 && resStatus < 400) {
+            System.out.println("Good response in addUser");
             json = response.body().string();
             System.out.println(json);
             ResponseObj resObj = gson.fromJson(json, ResponseObj.class);
@@ -82,6 +83,7 @@ public class OkClient {
             user.id = tempUser.id;
             return 0;
         }
+        System.out.println("Error in addUser");
         return 1;
     }
 
