@@ -1,6 +1,7 @@
 package Controller;
 
 import ClientAccountNetworking.OkClient;
+import PeerNetworking.ConnectionManager;
 import QueryObjects.UserData;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -44,13 +45,15 @@ public class AccountCreationController {
             System.out.printf("Obj email: %s%n", user.email);
             System.out.printf("Obj token: %s%n", user.token);
             System.out.printf("Obj id: %s%n", user.id);
+            ConnectionManager connectionManager = new ConnectionManager(user);
+            int port = connectionManager.connectToStun();
             Node source = (Node) actionEvent.getSource();
             Stage theStage = (Stage) source.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
             try {
                 Parent root = loader.<Parent>load();
                 FriendsController controller = loader.<FriendsController>getController();
-                controller.initData(user);
+                controller.initData(user, port);
                 Scene friendsScene = new Scene(root);
                 theStage.setScene(friendsScene);
             } catch (IOException e) {
