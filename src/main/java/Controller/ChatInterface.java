@@ -1,5 +1,6 @@
 package Controller;
 
+import Cryptography.AssymEncypt;
 import PeerNetworking.PeerConnection;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
@@ -12,6 +13,9 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 
+import javax.crypto.NoSuchPaddingException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.util.Random;
 
 public class ChatInterface {
@@ -22,21 +26,26 @@ public class ChatInterface {
     private UserData user;
     private FriendData friend;
     private PeerConnection peer = null;
+    private AssymEncypt assymEncypt;
+    private PublicKey targetUserPublicKey;
+
     @FXML
     public void initialize(){
     }
 
     void initController(PeerConnection peer, UserData user, FriendData friend){
+        try {
+            AssymEncypt crypto = new AssymEncypt();
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            e.printStackTrace();
+            System.out.println("Error with encryption protocol");
+            System.exit(1);
+        }
         this.peer = peer;
         peer.setParentWindow(this);
         peer.startReceiving();
         this.user = user;
         this.friend = friend;
-    }
-
-    void setPeerTester(PeerConnection peer){
-        this.peer = peer;
-        peer.setParentWindow(this);
     }
 
     public void sendMessage(ActionEvent actionEvent) {
@@ -45,7 +54,6 @@ public class ChatInterface {
         sendMessageToWindow(userIsSource(message));
         peer.sendMessage(message);
     }
-
 
     void endConnection(){
         if (peer != null){
@@ -58,7 +66,7 @@ public class ChatInterface {
         messageWindow.appendText(message);
     }
 
-    //both need to be fixed on init
+
     private String userIsSource(String message){
         return String.format("%s >> %s\n", user.username, message);
     }

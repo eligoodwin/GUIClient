@@ -1,13 +1,10 @@
 package Controller;
 
 import ClientAccountNetworking.OkClient;
-import Cryptography.LocalAsymmetricCrypto;
-import PeerNetworking.ConnectionManager;
 import PeerNetworking.PeerConnection;
 import QueryObjects.ChatRequest;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
-import com.sun.org.apache.xpath.internal.operations.Mod;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -28,7 +25,6 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 
-import java.awt.*;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -37,7 +33,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
 //Source for ListView: https://www.youtube.com/watch?v=9uubyM6oHAY
@@ -45,7 +40,6 @@ public class FriendsController{
     private static final String FRIEND_ACCEPTED = "2";
     private static final long REQ_LISTEN_REFRESH = 2000;
     private static final long MAX_REQUEST_DIFF = 10000;
-    private LocalAsymmetricCrypto crypto = null;
     //0 for open, 1 for attempting connection, 2 for connected
     private int connectionStatus = 0;
     private boolean acceptConnection = false;
@@ -160,13 +154,6 @@ public class FriendsController{
     @FXML
     public void initialize(){
         client = new OkClient();
-        try {
-            crypto = new LocalAsymmetricCrypto();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Could not init encryption");
-            System.exit(1);
-        }
     }
 
     //TODO: does this need to be synchronized?
