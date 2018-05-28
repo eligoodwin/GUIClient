@@ -51,7 +51,7 @@ public class AccountCreationController {
                 Parent root = loader.<Parent>load();
                 FriendsController controller = loader.<FriendsController>getController();
                 controller.initData(user);
-                Scene friendsScene = new Scene(root, 200, 600);
+                Scene friendsScene = new Scene(root);
                 theStage.setScene(friendsScene);
             } catch (IOException e) {
                 e.printStackTrace();

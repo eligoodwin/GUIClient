@@ -3,6 +3,7 @@ package PeerNetworking;
 import QueryObjects.STUNRegistration;
 import QueryObjects.UserData;
 import com.google.gson.Gson;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import java.io.*;
 import java.net.*;
@@ -28,44 +29,17 @@ public class ConnectionManager {
     private static Gson gson = new Gson();
     private UserData user = null;
     private ArrayList<Socket> openSockets = new ArrayList<>();
-    private int nextPort = 9000;
+    private int nextPort = 10000;
     private Socket nextSocket = null;
 
 
-    private ConnectionManager(UserData usr){
+    public ConnectionManager(UserData usr){
         user = usr;
-    }
-
-    //Returns 0 on sucessful ping of stun server, -1 on timeout
-    public synchronized int pingStunServer(int port) throws IOException {
-        Socket sock = new Socket();
-        sock.setReuseAddress(true);
-        sock.bind(new InetSocketAddress(port));
-        sock.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
-        STUNRegistration validation = new STUNRegistration(user, API_TOKEN);
-        String json = gson.toJson(validation);
-        System.out.println(json);
-        sendMessage(json, sock);
-        String res = "";
-        BufferedReader input = getBuffer(sock);
-        try {
-            res = input.readLine();
-        }
-        catch(SocketTimeoutException e){
-            e.printStackTrace();
-            System.out.println("Socket receive timeout");
-            sock.close();
-            return -1;
-        }
-        sock.close();
-        System.out.println("Response:" + res);
-        System.out.println("Port: " + port);
-        return 0;
     }
 
     public synchronized int getNextSocket(){
         try {
-            findAvailableSocket();
+            findNextSocket();
         }
         catch(SocketException e){
             e.printStackTrace();
@@ -74,18 +48,61 @@ public class ConnectionManager {
         return nextPort;
     }
 
-    //
-    private void findAvailableSocket() throws SocketException {
-        if (nextPort > 65535) throw new SocketException();
+    private void getNewPort(){
+        nextPort++;
+    }
 
-        int check;
-        while (true) {
-            user.peerServerPort = Integer.toString(nextPort);
+    //will need to be modified to send JWT with user
+    public void connectToStun(){
+        boolean badPort = true;
+        do{
             try {
-                check = pingStunServer(nextPort);
-                //TODO: this error should be an exception
-                if (check == -1) break;
-                else if (check == 0) break;
+                nextSocket = new Socket();
+                nextSocket.setReuseAddress(true);
+                nextSocket.bind(new InetSocketAddress(nextPort));
+                nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
+                STUNRegistration validation = new STUNRegistration(user, API_TOKEN);
+                String message = gson.toJson(validation);
+                sendMessage(message);
+//                String response = getMessage(); ? response from stun server ?
+//                String response = "nope";
+//                System.out.printf("RESPONSE FROM STUN: %s\n", response);
+                badPort = false;
+                nextSocket.close();
+            } catch (IOException e) {
+                System.out.println("Could not connect to STUN server on port incrementing");
+                getNewPort();
+            }
+        }while(badPort);
+    }
+
+    private void findNextSocket() throws SocketException {
+        nextSocket = new Socket();
+        if (nextPort > 65535) throw new SocketException();
+        while (!nextSocket.isConnected()) {
+            try {
+                nextSocket.setReuseAddress(true);
+                nextSocket.bind(new InetSocketAddress(nextPort));
+                nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
+                STUNRegistration validation = new STUNRegistration(user, API_TOKEN);
+                String json = gson.toJson(validation);
+                System.out.println(json);
+                sendMessage(json);
+                String res = "";
+
+                try {
+                    res = getMessage();
+                }
+                catch(SocketTimeoutException e){
+                    e.printStackTrace();
+                    System.out.println("Socket receive timeout");
+                    nextSocket.close();
+                    return;
+                }
+                nextSocket.close();
+                System.out.println("Response:" + res);
+                System.out.println("Port: " + nextPort);
+                break;
             }
             catch(IOException e){
                 nextPort++;
@@ -94,7 +111,7 @@ public class ConnectionManager {
     }
 
     private String getMessage() throws IOException, SocketTimeoutException {
-        BufferedReader bufferedReader = getBuffer(nextSocket);
+        BufferedReader bufferedReader = getBuffer();
         try {
             return bufferedReader.readLine();
         }
@@ -104,19 +121,19 @@ public class ConnectionManager {
     }
 
 
-    private BufferedReader getBuffer(Socket connectionClient) throws IOException{
-        InputStream inputStream = connectionClient.getInputStream();
+    private BufferedReader getBuffer() throws IOException{
+        InputStream inputStream = nextSocket.getInputStream();
         return new BufferedReader((new InputStreamReader(inputStream)));
     }
 
 
-    private void sendMessage(String message, Socket socket) throws IOException {
-        PrintWriter out = writeToBuffer(socket);
+    private void sendMessage(String message) throws IOException {
+        PrintWriter out = writeToBuffer();
         out.println(message);
     }
 
-    private PrintWriter writeToBuffer(Socket socket) throws IOException{
-        OutputStream out = socket.getOutputStream();
+    private PrintWriter writeToBuffer() throws IOException{
+        OutputStream out = nextSocket.getOutputStream();
         return new PrintWriter(out, true);
     }
 }

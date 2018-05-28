@@ -1,9 +1,11 @@
 package Controller;
 
+import Cryptography.AssymEncypt;
 import PeerNetworking.PeerConnection;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
 import TestBot.JadenSmithBot;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -11,6 +13,9 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 
+import javax.crypto.NoSuchPaddingException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.util.Random;
 
 public class ChatInterface {
@@ -21,29 +26,31 @@ public class ChatInterface {
     private UserData user;
     private FriendData friend;
     private PeerConnection peer = null;
+    private AssymEncypt assymEncypt;
+    private PublicKey targetUserPublicKey;
 
     @FXML
     public void initialize(){
     }
 
     void initController(PeerConnection peer, UserData user, FriendData friend){
+        try {
+            AssymEncypt crypto = new AssymEncypt();
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            e.printStackTrace();
+            System.out.println("Error with encryption protocol");
+            System.exit(1);
+        }
+        this.peer = peer;
+        peer.setParentWindow(this);
+        peer.startReceiving();
         this.user = user;
         this.friend = friend;
-        this.peer = peer;
-        peer.setParentWindow(this);
-        //TODO: this needs to be after window is fully loaded to work
-        peer.startReceiving();
-
-    }
-
-    void setPeerTester(PeerConnection peer){
-        this.peer = peer;
-        peer.setParentWindow(this);
     }
 
     public void sendMessage(ActionEvent actionEvent) {
         String message = messageToSend.getText();
-        messageToSend.setText("");
+        messageToSend.clear();
         sendMessageToWindow(userIsSource(message));
         peer.sendMessage(message);
     }
@@ -55,27 +62,15 @@ public class ChatInterface {
         }
     }
 
-
-    private int getMessageWindowHeight(){
-        int windowHeight = messageWindow.getText().split("\n").length;
-        System.out.printf("Window height is: %s\n", windowHeight);
-        return windowHeight;
-    }
-
-
-    private void placeRowCountInMessageWindow(int height){
-        messageWindow.appendText(String.format("This chat window has %s rows", String.valueOf(height)));
-    }
-
     public void sendMessageToWindow(String message){
         messageWindow.appendText(message);
     }
 
     private String userIsSource(String message){
-        return String.format("You said >> \t%s\n", message);
+        return String.format("%s >> %s\n", user.username, message);
     }
 
     public String userIsNotSource(String message){
-        return String.format("They said << \t%s\n", message);
+        return String.format("%s << %s\n", friend.friend_name, message);
     }
 }

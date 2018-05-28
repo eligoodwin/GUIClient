@@ -1,7 +1,6 @@
 package Controller;
 
 import ClientAccountNetworking.OkClient;
-import Cryptography.LocalAsymmetricCrypto;
 import PeerNetworking.ConnectionManager;
 import PeerNetworking.PeerConnection;
 import QueryObjects.ChatRequest;
@@ -35,6 +34,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
 //Source for ListView: https://www.youtube.com/watch?v=9uubyM6oHAY
@@ -42,9 +42,10 @@ public class FriendsController{
     private static final String FRIEND_ACCEPTED = "2";
     private static final long REQ_LISTEN_REFRESH = 2000;
     private static final long MAX_REQUEST_DIFF = 10000;
-    private LocalAsymmetricCrypto crypto = null;
-    private boolean running = true;
+    //0 for open, 1 for attempting connection, 2 for connected
+    private int connectionStatus = 0;
     private boolean acceptConnection = false;
+    private boolean running = true;
     private OkClient client = null;
     private UserData user = null;
     private ArrayList<ChatRequest> chatRequests = new ArrayList<>();
@@ -169,22 +170,6 @@ public class FriendsController{
     @FXML
     public void initialize(){
         client = new OkClient();
-        try {
-            crypto = new LocalAsymmetricCrypto();
-            String simpleMsg = "This is a simple message to be encrypted.";
-            System.out.println("Pre encryption: " + simpleMsg);
-            String encrypted = crypto.encryptString(simpleMsg, null);
-            System.out.println("Encrypted: " + encrypted);
-            String decrypted = crypto.decryptString(encrypted, null);
-            System.out.println(("Decrypted: " + decrypted));
-        }
-        catch(Exception e){
-            //TODO: may want to handle this more gracefully
-            e.printStackTrace();
-            System.out.println("Could not initialize crypto object");
-            crypto = null;
-        }
-        System.out.println("Trace: in initialize");
     }
 
     synchronized int updateFriendsList(){
@@ -220,13 +205,6 @@ public class FriendsController{
     void initData(UserData usr){
         System.out.println("Trace: in initData");
         user = usr;
-        try {
-            manager = ConnectionManager.getConnectionManager(user);
-            nextPort = manager.getNextSocket();
-        }
-        catch(IOException e){
-            e.printStackTrace();
-        }
         updateFriendsList();
         startRequestHandler();
     }
@@ -350,7 +328,7 @@ public class FriendsController{
                 Parent root = loader.<Parent>load();
                 ChatInterface controller = loader.<ChatInterface>getController();
                 controller.initController(peer, user, friend);
-                Scene chatScene = new Scene(root, 300, 550);
+                Scene chatScene = new Scene(root);
                 theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
                     public void handle(WindowEvent we) {
                         controller.endConnection();
@@ -377,7 +355,7 @@ public class FriendsController{
             controller.initData(getUser());
             Stage stage = new Stage();
             stage.setTitle("Add Friend");
-            stage.setScene(new Scene(root, 400, 150));
+            stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.showAndWait();
         }
@@ -440,7 +418,7 @@ public class FriendsController{
             controller.initData(this, req);
             Stage stage = new Stage();
             stage.setTitle("Connection Request");
-            stage.setScene(new Scene(root, 400, 150));
+            stage.setScene(new Scene(root));
             setAcceptConnection(false);
             //Source: https://stackoverflow.com/a/34071134/2487475
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -522,7 +500,6 @@ public class FriendsController{
             boolean contains = requestsContains(req);
             if (check > 0 && !contains) {
                 chatRequests.add(req);
-                //
                 //Source: https://stackoverflow.com/a/13804542/2487475
                 final FutureTask query = new FutureTask(new Callable(){
                         @Override
@@ -561,7 +538,7 @@ public class FriendsController{
             Parent root = loader.<Parent>load();
             ChatInterface controller = loader.<ChatInterface>getController();
             controller.initController(nextPeer, user, friend);
-            Scene chatScene = new Scene(root, 300, 550);
+            Scene chatScene = new Scene(root);
             theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
                 public void handle(WindowEvent we) {
                     controller.endConnection();

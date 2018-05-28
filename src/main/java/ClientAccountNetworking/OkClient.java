@@ -20,8 +20,8 @@ import static java.lang.Integer.parseInt;
 public class OkClient {
     private final static String GOOD_RES = "VALID REQUEST";
     private final static String API_TOKEN = "fXtas7yB2HcIVoCyyQ78";
+    //Server: http://104.168.134.135:8080
     private final static String SERVER_ADDRESS = "http://104.168.134.135:8080";
-    //private final static String SERVER_ADDRESS = "http://localhost:8080";
     private static Gson gson = new Gson();
     //Source: https://stackoverflow.com/questions/4802887/gson-how-to-exclude-specific-fields-from-serialization-without-annotations
     private static Gson exGson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
@@ -112,6 +112,7 @@ public class OkClient {
     public int requestFriend(String username, UserData current) throws IOException{
         if (url.equals("")) return -1;
         Request request = new Request.Builder()
+                .addHeader("Authorization", "Bearer" + current.token)
                 .url(url + "/user/" + current.id + "/friend/" + username)
                 .build();
         Response response = client.newCall(request).execute();
@@ -126,9 +127,10 @@ public class OkClient {
         return 1;
     }
 
-    private int updateRelationship(long id, String friendName, int status) throws IOException {
+    private int updateRelationship(long id, String userToken, String friendName, int status) throws IOException {
         if (url.equals("")) return -1;
         Request request = new Request.Builder()
+                .addHeader("Authorization", "Bearer" + userToken)
                 .url(url + "/user/" + id + "/friend/" + friendName + "/" + status)
                 .build();
         Response response = client.newCall(request).execute();
@@ -143,17 +145,17 @@ public class OkClient {
     }
 
     public int acceptFriend(UserData current, String friendName) throws IOException{
-        int ok = updateRelationship(current.id, friendName, 2);
+        int ok = updateRelationship(current.id, current.token, friendName, 2);
         return ok;
     }
 
     public int rejectFriend(UserData current, String friendName) throws IOException{
-        int ok = updateRelationship(current.id, friendName, 3);
+        int ok = updateRelationship(current.id, current.token, friendName, 3);
         return ok;
     }
 
     public int blockFriend(UserData current, String friendName) throws IOException{
-        int ok = updateRelationship(current.id, friendName, 4);
+        int ok = updateRelationship(current.id, current.token, friendName, 4);
         return ok;
     }
 
@@ -161,6 +163,7 @@ public class OkClient {
     public String getFriends(UserData current, ArrayList<FriendData> friends) throws IOException {
         if (url.equals("")) return "No URL";
         Request request = new Request.Builder()
+                .addHeader("Authorization", "Bearer" + current.token)
                 .url(url + "/user/" + current.id + "/friend")
                 .build();
         Response response = client.newCall(request).execute();
@@ -206,14 +209,15 @@ public class OkClient {
         return 1;
     }
 
-    public ChatRequest makeChatRequest(UserData current, String friendName) throws IOException{
-        if (url.equals("")) return null;
+    public int makeChatRequest(UserData current, String friendName) throws IOException{
+        if (url.equals("")) return -1;
         ChatRequest chatRequest = new ChatRequest(current, friendName);
         chatRequest.API_token = API_TOKEN;
         String json = gson.toJson(chatRequest);
         System.out.println("Chat request: " + json);
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
+                .addHeader("Authorization", "Bearer" + current.token)
                 .url(url + "/user/" + current.id + "/chat")
                 .post(body)
                 .build();
@@ -221,18 +225,16 @@ public class OkClient {
         int resStatus = response.code();
         if (resStatus >= 200 && resStatus < 400) {
             String res = response.body().string();
-            ResponseObj resObj = gson.fromJson(res, ResponseObj.class);
-            ChatRequest req = gson.fromJson(resObj.message, ChatRequest.class);
             System.out.println("Chat request res: " + res);
-            System.out.println("ChatRequest target: " + req.targetUser);
-            return req;
+            if (res.equals("request made")) return 0;
         }
-        return null;
+        return 1;
     }
 
     public int getChatRequests(UserData current, ArrayList<ChatRequest> requestList) throws IOException{
         if (url.equals("")) return -1;
         Request request = new Request.Builder()
+                .addHeader("Authorization", "Bearer" + current.token)
                 .url(url + "/user/" + current.id + "/chat")
                 .build();
         Response response = client.newCall(request).execute();
@@ -248,6 +250,7 @@ public class OkClient {
                 requestList.add(req);
             }
         }
+
         return 1;
     }
 
