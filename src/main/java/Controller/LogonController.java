@@ -29,14 +29,14 @@ public class LogonController {
         if(attemptLogon()){
             //get ip info into stun server
             ConnectionManager connectionManager = new ConnectionManager(user);
-            connectionManager.connectToStun();
+            int port = connectionManager.connectToStun();
 
             Node source = (Node) actionEvent.getSource();
             Stage theStage = (Stage) source.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
             Parent root = loader.<Parent>load();
             FriendsController controller = loader.<FriendsController>getController();
-            controller.initData(user);
+            controller.initData(user, port);
             Scene friendsScene = new Scene(root);
             theStage.setScene(friendsScene);
         }

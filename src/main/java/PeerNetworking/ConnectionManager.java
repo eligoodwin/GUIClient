@@ -29,7 +29,7 @@ public class ConnectionManager {
     private static Gson gson = new Gson();
     private UserData user = null;
     private ArrayList<Socket> openSockets = new ArrayList<>();
-    private int nextPort = 10000;
+    private int nextPort = 27000;
     private Socket nextSocket = null;
 
 
@@ -53,7 +53,7 @@ public class ConnectionManager {
     }
 
     //will need to be modified to send JWT with user
-    public void connectToStun(){
+    public int connectToStun(){
         boolean badPort = true;
         do{
             try {
@@ -74,6 +74,7 @@ public class ConnectionManager {
                 getNewPort();
             }
         }while(badPort);
+        return nextPort;
     }
 
     private void findNextSocket() throws SocketException {

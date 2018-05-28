@@ -202,9 +202,10 @@ public class FriendsController{
         return 0;
     }
 
-    void initData(UserData usr){
+    void initData(UserData usr, int port){
         System.out.println("Trace: in initData");
         user = usr;
+        nextPort = port;
         updateFriendsList();
         startRequestHandler();
     }

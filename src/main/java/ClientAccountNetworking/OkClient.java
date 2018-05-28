@@ -168,9 +168,9 @@ public class OkClient {
                 .build();
         Response response = client.newCall(request).execute();
         int status = response.code();
+        String res = response.body().string();
+        System.out.println(res); //TODO: trace
         if (status >= 200 && status < 400) {
-            String res = response.body().string();
-            System.out.println(res); //TODO: trace
             ResponseArray resObj = gson.fromJson(res, ResponseArray.class);
             res = resObj.status;
             FriendData[] tempFrnds;
@@ -181,9 +181,7 @@ public class OkClient {
             return res;
         }
         else{
-            String res = response.body().string();
             ResponseArray resObj = gson.fromJson(res, ResponseArray.class);
-            System.out.println(res);
             res = resObj.status;
             return res;
         }
