@@ -1,6 +1,7 @@
 package Controller;
 
 import PeerNetworking.PeerConnection;
+import QueryObjects.ChatRequest;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
 import TestBot.JadenSmithBot;
@@ -11,6 +12,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 
+import java.io.IOException;
 import java.util.Random;
 
 public class ChatInterface {
@@ -74,6 +76,24 @@ public class ChatInterface {
         public StartupThread(ChatInterface window){
             parentWindow = window;
         }
+    }
+
+    private int attemptConnection(ChatRequest req){
+        try {
+            peer = new PeerConnection(user, req);
+            int status = peer.connectNatPunch(port);
+            //TODO: handle different status
+            if (status != 0) peer = null;
+        }
+        catch(IOException e){
+            e.printStackTrace();
+            peer = null;
+        }
+        //Connection success
+        if (peer != null){
+            return 0;
+        }
+        return 1;
     }
 
     void setPeerTester(PeerConnection peer){

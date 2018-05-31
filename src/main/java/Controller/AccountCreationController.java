@@ -37,14 +37,7 @@ public class AccountCreationController {
         }
         //user created succesfully
         if (check == 0) {
-            System.out.printf("Text user: %s%n", createUsername.getText());
-            System.out.printf("Text pass: %s%n", createPassword.getText());
-            System.out.printf("Text email: %s%n", createEmail.getText());
-            System.out.printf("Obj user: %s%n", user.username);
-            System.out.printf("Obj pass: %s%n", user.password);
-            System.out.printf("Obj email: %s%n", user.email);
-            System.out.printf("Obj token: %s%n", user.token);
-            System.out.printf("Obj id: %s%n", user.id);
+            System.out.printf("User created with id: %s%n", user.id);
             ConnectionManager connectionManager = new ConnectionManager(user);
             int port = connectionManager.connectToStun();
             Node source = (Node) actionEvent.getSource();
@@ -53,7 +46,7 @@ public class AccountCreationController {
             try {
                 Parent root = loader.<Parent>load();
                 FriendsController controller = loader.<FriendsController>getController();
-                controller.initData(user, port);
+                controller.initData(user);
                 Scene friendsScene = new Scene(root);
                 theStage.setScene(friendsScene);
             } catch (IOException e) {

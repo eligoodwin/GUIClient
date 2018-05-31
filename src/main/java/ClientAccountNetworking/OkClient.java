@@ -57,7 +57,10 @@ public class OkClient {
                 user.id = Long.parseLong(resObj.message.get("id").toString());
                 return 0;
             }
-            //TODO: retry route
+            else {
+                System.out.println("Bad response in logon");
+                //TODO: retry route
+            }
         }
         return 1;
     }

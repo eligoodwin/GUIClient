@@ -80,10 +80,10 @@ public class ConnectionManager {
     }
 
     private void findNextSocket() throws SocketException {
-        nextSocket = new Socket();
         if (nextPort > 65535) throw new SocketException();
-        while (!nextSocket.isConnected()) {
+        while (true) {
             try {
+                nextSocket = new Socket();
                 nextSocket.setReuseAddress(true);
                 nextSocket.bind(new InetSocketAddress(nextPort));
                 nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
@@ -92,8 +92,8 @@ public class ConnectionManager {
                 System.out.println(json);
                 sendMessage(json);
                 String res = "";
-
                 try {
+                    System.out.println("Connected to STUN on port: " + nextPort);
                     res = getMessage();
                 }
                 catch(SocketTimeoutException e){
@@ -103,9 +103,8 @@ public class ConnectionManager {
                     return;
                 }
                 nextSocket.close();
-                System.out.println("Response:" + res);
-                System.out.println("Port: " + nextPort);
-                break;
+                System.out.println("Good STUN Response:" + res);
+                return;
             }
             catch(IOException e){
                 nextPort++;

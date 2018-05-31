@@ -36,7 +36,7 @@ public class LogonController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
             Parent root = loader.<Parent>load();
             FriendsController controller = loader.<FriendsController>getController();
-            controller.initData(user, port);
+            controller.initData(user);
             Scene friendsScene = new Scene(root);
             theStage.setScene(friendsScene);
         }
