@@ -25,6 +25,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
+import sun.awt.Mutex;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -41,8 +42,9 @@ public class FriendsController{
     private static final String FRIEND_ACCEPTED = "2";
     private static final long REQ_LISTEN_REFRESH = 2000;
     private static final long MAX_REQUEST_DIFF = 15000;
-    private boolean running = true;
     private boolean acceptConnection = false;
+    private boolean handlingRequest = false;
+    private Mutex friendMutex = new Mutex();
     private OkClient client = null;
     private UserData user = null;
     private ArrayList<ChatRequest> chatRequests = new ArrayList<>();
@@ -67,13 +69,9 @@ public class FriendsController{
         return user;
     }
 
-    private synchronized boolean getRunning() {
-        return running;
-    }
+    private synchronized  void setHandlingRequest(boolean status){handlingRequest = status;}
 
-    private synchronized void setRunning(boolean run) {
-        this.running = run;
-    }
+    private synchronized  boolean getHandlingRequest(){return handlingRequest;}
 
     public void setAcceptConnection(boolean acceptConnection) {
         this.acceptConnection = acceptConnection;
@@ -144,23 +142,33 @@ public class FriendsController{
         }//end update
     }
 
-    FriendData findFriend(String friendName){
+    private synchronized FriendData findFriend(String friendName){
         if (fList.size() < 1) return null;
+        friendMutex.lock();
         for (int i = 0; i < fList.size(); i++){
             FriendData temp = fList.get(i);
-            if (temp.friend_name.equals(friendName)) return temp;
+            if (temp.friend_name.equals(friendName)){
+                friendMutex.unlock();
+                return temp;
+            }
         }
+        friendMutex.unlock();
         //not found
         return null;
     }
 
     int findFriendIndex(FriendData friend){
         if (fList.size() < 1) return -1;
+        friendMutex.lock();
         for (int i = 0; i < fList.size(); i++){
             FriendData temp = fList.get(i);
-            if (temp.friendID == friend.friendID && temp.friend_name.equals(friend.friend_name)) return i;
+            if (temp.friendID == friend.friendID && temp.friend_name.equals(friend.friend_name)){
+                friendMutex.unlock();
+                return i;
+            }
         }
         //not found
+        friendMutex.unlock();
         return -1;
     }
 
@@ -171,6 +179,7 @@ public class FriendsController{
 
     synchronized int updateFriendsList(){
         if (getUser() == null) return -1;
+        friendMutex.lock();
         if (fList.size() != 0) fList.clear();
         if (friendsList != null) friendsList.getItems().clear();
         if (friends != null) friends.clear();
@@ -196,6 +205,7 @@ public class FriendsController{
             });
             friendsList.refresh();
         }
+        friendMutex.unlock();
         return 0;
     }
 
@@ -284,13 +294,18 @@ public class FriendsController{
     }
 
     public void requestChat(ActionEvent actionEvent){
-        //kill requestHandler thread to avoid interference
-        if (requestHandler.isAlive()) requestHandler.interrupt();
+        if(getHandlingRequest()){
+            System.out.println("Handle existing chat requests before making a new one.");
+            return;
+        }
+        setHandlingRequest(true);
+        friendMutex.lock();
         //get selected friend from listview
         FriendData friend = friendsList.getSelectionModel().getSelectedItem();
         //check if friend is accepted
         if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) {
-            startRequestHandler();
+            setHandlingRequest(false);
+            friendMutex.unlock();
             return;
         }
         //TODO: popup window letting person know you can't connect to people that aren't friends
@@ -301,10 +316,13 @@ public class FriendsController{
         }
         catch(IOException e){
             e.printStackTrace();
-            startRequestHandler();
+            friendMutex.unlock();
+            setHandlingRequest(false);
             return;
             //TODO: popup error message
         }
+        //openChatWindow will setHandlingRequest(false)
+        friendMutex.unlock();
         openChatWindow(req);
     }
 
@@ -394,7 +412,7 @@ public class FriendsController{
         else{ System.out.println("Connection refused"); return 0;}
     }
 
-    private FriendData findFriendFromRequest(ChatRequest req){
+    private synchronized FriendData findFriendFromRequest(ChatRequest req){
         String friendName = "";
         //This user accepted the request
         if (req.targetUser.equals(user.username)){
@@ -452,13 +470,6 @@ public class FriendsController{
     }
 
     synchronized private int openChatWindow(ChatRequest req){
-        //TODO: don't need this if multiple connections?
-        try {
-            if (requestHandler != null) requestHandler.join(500);
-        }
-        catch(InterruptedException e){
-            e.printStackTrace();
-        }
         //Use current stage to hide friends window
         //Stage theStage = (Stage)friendsList.getScene().getWindow();
         //Use new stage to popup new window
@@ -481,9 +492,10 @@ public class FriendsController{
         catch(IOException e){
             e.printStackTrace();
             System.out.println("Exception in requestChat");
+            setHandlingRequest(false);
             return 1;
         }
-
+        setHandlingRequest(false);
         return 0;
     }
 
@@ -496,31 +508,36 @@ public class FriendsController{
             if(threadUser == null) return;
             String currentServerTime = null;
             //while not connected - this should change for multiple connections functionality
-            while(getRunning()){
-                newRequests.clear();
-                try {
-                    currentServerTime = threadClient.getChatRequests(threadUser, newRequests);
-                    acceptedRequest = handleRequests(newRequests, currentServerTime);
-                    if(acceptedRequest != null){
-                        final FutureTask update = new FutureTask(new Callable(){
-                            @Override
-                            public Object call() throws Exception{
-                                return openChatWindow(acceptedRequest);
-                            }
-                        });
-                        Platform.runLater(update);
+            while(true){
+                if(!getHandlingRequest()) {
+                    setHandlingRequest(true);
+                    newRequests.clear();
+                    try {
+                        currentServerTime = threadClient.getChatRequests(threadUser, newRequests);
+                        acceptedRequest = handleRequests(newRequests, currentServerTime);
+                        if (acceptedRequest != null) {
+                            final FutureTask update = new FutureTask(new Callable() {
+                                @Override
+                                public Object call() throws Exception {
+                                    return openChatWindow(acceptedRequest);
+                                }
+                            });
+                            Platform.runLater(update);
+                        }
+                        else{
+                            setHandlingRequest(false);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        //TODO: figure out how to handle this gracefully
+                        setHandlingRequest(false);
+                        break;
                     }
-                }
-                catch(IOException e){
-                    e.printStackTrace();
-                    //TODO: figure out how to handle this gracefully
-                    break;
-                }
+                    if(loopCount > 5 && currentServerTime != null) removeStaleRequests(currentServerTime);
+                    //setHandlingRequest(false) is handled by openChatWindow if a request is accepted
+                }//if handling request
                 loopCount++;
                 if(loopCount > 5){
-                    if(currentServerTime != null) {
-                        removeStaleRequests(currentServerTime);
-                    }
                     loopCount = 0;
                     final FutureTask update = new FutureTask(new Callable(){
                         @Override
