@@ -2,7 +2,6 @@ package Controller;
 
 import ClientAccountNetworking.OkClient;
 import PeerNetworking.ConnectionManager;
-import PeerNetworking.PeerConnection;
 import QueryObjects.UserData;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -17,7 +16,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class LogonController {
-    UserData user = null;
+    private UserData user = null;
     private OkClient client = new OkClient();
     @FXML
     private TextField logonUsername;
@@ -25,73 +24,42 @@ public class LogonController {
     private PasswordField logonPassword;
 
     public void gotoNextPage(ActionEvent actionEvent) throws Exception {
-        user = new UserData();
-        user.username = logonUsername.getText();
-        user.password = logonPassword.getText();
-        try {
-            int res = client.logon(user);
-            try {
-                ConnectionManager connectionManager = ConnectionManager.getConnectionManager(user);
-            }
-            catch(IOException e){
-                e.printStackTrace();
-                //TODO: handle this better
-            }
-            System.out.printf("User token: %s%n", user.token);
-        } catch (IOException e) {
-            e.printStackTrace();
-            //TODO: re-try route (pop up message?)
-        }
-        //for debugging only
-        if (user.username.equals("testLocalChat") || user.username.equals("testlocalchat")) {
-            testLocalServer(actionEvent);
-        }
-        //normal route
-        else {
-            System.out.println("Logon controller clicked");
+        System.out.println("Logon controller clicked");
+        //logon
+        if(attemptLogon()){
+            //get ip info into stun server
+            ConnectionManager connectionManager = new ConnectionManager(user);
+            int port = connectionManager.connectToStun();
+
             Node source = (Node) actionEvent.getSource();
             Stage theStage = (Stage) source.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));
             Parent root = loader.<Parent>load();
             FriendsController controller = loader.<FriendsController>getController();
-            controller.initData(user);
-            Scene friendsScene = new Scene(root, 300, 550);
+            controller.initData(user, port);
+            Scene friendsScene = new Scene(root);
             theStage.setScene(friendsScene);
+        }
+        else{
+            //display red text warning bad credentials
+            System.out.println("bad creds");
         }
     }
 
-    private void testLocalServer(ActionEvent actionEvent) {
-        //start local server - default port == 9000
-        PeerConnection peer = new PeerConnection(9000);
-        //display popup that waiting for peer connection
-
-        //update IP after connection
-        UserData temp = peer.getUser();
-        user.ipAddress = temp.ipAddress;
-        user.peerServerPort = temp.peerServerPort;
-        System.out.println("Trace, IP update: " + user.ipAddress + " : " + user.peerServerPort);
-        int status = -1;
+    //used to attemptLogon the user
+    private boolean attemptLogon(){
+        final int VALID_HTTP = 0;
+        user = new UserData();
+        user.username = logonUsername.getText();
+        user.password = logonPassword.getText();
         try {
-            status = client.updateIP(user);
+            int httpStatus = client.logon(user);
+            if(VALID_HTTP == httpStatus ){
+                return true;
+            }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Could not connect to attemptLogon route");
         }
-        if (status != 0) {
-            System.out.println("Status is " + status);
-        }
-        //upon connection create chatInterface
-        Node source = (Node) actionEvent.getSource();
-        Stage theStage = (Stage) source.getScene().getWindow();
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatInterface.fxml"));
-        try {
-            Parent root = loader.<Parent>load();
-            ChatInterface controller = loader.<ChatInterface>getController();
-            controller.setPeerTester(peer);
-            Scene chatScene = new Scene(root, 300, 550);
-            theStage.setScene(chatScene);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.out.println("Exception in peer debug");
-        }
+        return false;
     }
 }

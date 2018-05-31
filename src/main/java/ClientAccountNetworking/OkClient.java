@@ -20,6 +20,7 @@ import static java.lang.Integer.parseInt;
 public class OkClient {
     private final static String GOOD_RES = "VALID REQUEST";
     private final static String API_TOKEN = "fXtas7yB2HcIVoCyyQ78";
+    //Server: http://104.168.134.135:8080
     private final static String SERVER_ADDRESS = "http://104.168.134.135:8080";
     //private final static String SERVER_ADDRESS = "http://localhost:8080";
     private static Gson gson = new Gson();
@@ -72,14 +73,13 @@ public class OkClient {
                 .post(body)
                 .build();
         Response response = client.newCall(request).execute();
+        json = response.body().string();
+        System.out.println(json);
         int resStatus = response.code();
         if (resStatus >= 200 && resStatus < 400) {
-            System.out.println("Good response in addUser");
-            json = response.body().string();
-            System.out.println(json);
             ResponseObj resObj = gson.fromJson(json, ResponseObj.class);
             UserData tempUser = gson.fromJson(resObj.message.getAsJsonObject("userDetails"), UserData.class);
-            user.token = tempUser.token;
+            user.token = resObj.message.get("token").getAsString();
             user.id = tempUser.id;
             return 0;
         }
@@ -114,6 +114,7 @@ public class OkClient {
     public int requestFriend(String username, UserData current) throws IOException{
         if (url.equals("")) return -1;
         Request request = new Request.Builder()
+                .addHeader("Authorization", "Bearer" + current.token)
                 .url(url + "/user/" + current.id + "/friend/" + username)
                 .build();
         Response response = client.newCall(request).execute();
@@ -128,9 +129,10 @@ public class OkClient {
         return 1;
     }
 
-    private int updateRelationship(long id, String friendName, int status) throws IOException {
+    private int updateRelationship(long id, String userToken, String friendName, int status) throws IOException {
         if (url.equals("")) return -1;
         Request request = new Request.Builder()
+                .addHeader("Authorization", "Bearer" + userToken)
                 .url(url + "/user/" + id + "/friend/" + friendName + "/" + status)
                 .build();
         Response response = client.newCall(request).execute();
@@ -145,17 +147,17 @@ public class OkClient {
     }
 
     public int acceptFriend(UserData current, String friendName) throws IOException{
-        int ok = updateRelationship(current.id, friendName, 2);
+        int ok = updateRelationship(current.id, current.token, friendName, 2);
         return ok;
     }
 
     public int rejectFriend(UserData current, String friendName) throws IOException{
-        int ok = updateRelationship(current.id, friendName, 3);
+        int ok = updateRelationship(current.id, current.token, friendName, 3);
         return ok;
     }
 
     public int blockFriend(UserData current, String friendName) throws IOException{
-        int ok = updateRelationship(current.id, friendName, 4);
+        int ok = updateRelationship(current.id, current.token, friendName, 4);
         return ok;
     }
 
@@ -163,13 +165,14 @@ public class OkClient {
     public String getFriends(UserData current, ArrayList<FriendData> friends) throws IOException {
         if (url.equals("")) return "No URL";
         Request request = new Request.Builder()
+                .addHeader("Authorization", "Bearer" + current.token)
                 .url(url + "/user/" + current.id + "/friend")
                 .build();
         Response response = client.newCall(request).execute();
         int status = response.code();
+        String res = response.body().string();
+        System.out.println(res); //TODO: trace
         if (status >= 200 && status < 400) {
-            String res = response.body().string();
-            System.out.println(res); //TODO: trace
             ResponseArray resObj = gson.fromJson(res, ResponseArray.class);
             res = resObj.status;
             FriendData[] tempFrnds;
@@ -180,9 +183,7 @@ public class OkClient {
             return res;
         }
         else{
-            String res = response.body().string();
             ResponseArray resObj = gson.fromJson(res, ResponseArray.class);
-            System.out.println(res);
             res = resObj.status;
             return res;
         }
@@ -216,6 +217,7 @@ public class OkClient {
         System.out.println("Chat request: " + json);
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
+                .addHeader("Authorization", "Bearer" + current.token)
                 .url(url + "/user/" + current.id + "/chat")
                 .post(body)
                 .build();
@@ -235,12 +237,14 @@ public class OkClient {
     public int getChatRequests(UserData current, ArrayList<ChatRequest> requestList) throws IOException{
         if (url.equals("")) return -1;
         Request request = new Request.Builder()
+                .addHeader("Authorization", "Bearer" + current.token)
                 .url(url + "/user/" + current.id + "/chat")
                 .build();
         Response response = client.newCall(request).execute();
+        String res = response.body().string();
+        System.out.println(res);
         int resStatus = response.code();
         if (resStatus >= 200 && resStatus < 400) {
-            String res = response.body().string();
             //System.out.println("Chat requests: " + res);
             ResponseArray resObj = gson.fromJson(res, ResponseArray.class);
             if (!resObj.status.equals("VALID")) return 1;

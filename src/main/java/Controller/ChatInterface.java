@@ -1,7 +1,6 @@
 package Controller;
 
 import PeerNetworking.PeerConnection;
-import QueryObjects.ChatRequest;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
 import TestBot.JadenSmithBot;
@@ -12,7 +11,6 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 
-import java.io.IOException;
 import java.util.Random;
 
 public class ChatInterface {
@@ -85,7 +83,7 @@ public class ChatInterface {
 
     public void sendMessage(ActionEvent actionEvent) {
         String message = messageToSend.getText();
-        messageToSend.setText("");
+        messageToSend.clear();
         sendMessageToWindow(userIsSource(message));
         peer.sendMessage(message);
     }
@@ -97,45 +95,15 @@ public class ChatInterface {
         }
     }
 
-
-    private int getMessageWindowHeight(){
-        int windowHeight = messageWindow.getText().split("\n").length;
-        System.out.printf("Window height is: %s\n", windowHeight);
-        return windowHeight;
-    }
-
-
-    private void placeRowCountInMessageWindow(int height){
-        messageWindow.appendText(String.format("This chat window has %s rows", String.valueOf(height)));
-    }
-
     public void sendMessageToWindow(String message){
         messageWindow.appendText(message);
     }
 
     private String userIsSource(String message){
-        return String.format("You said >> \t%s\n", message);
+        return String.format("%s >> %s\n", user.username, message);
     }
 
     public String userIsNotSource(String message){
-        return String.format("They said << \t%s\n", message);
-    }
-
-    private int attemptConnection(ChatRequest req){
-        try {
-            peer = new PeerConnection(user, req);
-            int status = peer.connectNatPunch(port);
-            //TODO: handle different status
-            if (status != 0) peer = null;
-        }
-        catch(IOException e){
-            e.printStackTrace();
-            peer = null;
-        }
-        //Connection success
-        if (peer != null){
-            return 0;
-        }
-        return 1;
+        return String.format("%s << %s\n", friend.friend_name, message);
     }
 }

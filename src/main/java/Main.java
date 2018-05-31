@@ -1,4 +1,4 @@
-import QueryObjects.UserData;
+import QueryObjects.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -15,11 +15,15 @@ public class Main extends Application {
         System.out.println(getClass().getResource("/fxml/createAccount.fxml"));
         System.out.println(getClass().getResource("/fxml/splash.fxml"));
         Parent root = FXMLLoader.load(getClass().getResource("/fxml/splash.fxml"));
-        primaryStage.setScene(new Scene(root, 400, 200));
+        primaryStage.setScene(new Scene(root));
         primaryStage.show();
 
-        primaryStage.setOnCloseRequest(e -> Platform.exit());
-
+        //closes down the program completely when the program exits -- still need to fix for chat client
+        primaryStage.setOnCloseRequest(e -> {
+                    Platform.exit();
+                    System.exit(0);
+                }
+        );
     }
 
     public static void main(String[] args){
