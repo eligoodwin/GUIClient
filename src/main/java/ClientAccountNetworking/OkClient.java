@@ -237,8 +237,8 @@ public class OkClient {
         return null;
     }
 
-    public int getChatRequests(UserData current, ArrayList<ChatRequest> requestList) throws IOException{
-        if (url.equals("")) return -1;
+    public String getChatRequests(UserData current, ArrayList<ChatRequest> requestList) throws IOException{
+        if (url.equals("")) return null;
         Request request = new Request.Builder()
                 .addHeader("Authorization", "Bearer" + current.token)
                 .url(url + "/user/" + current.id + "/chat")
@@ -249,15 +249,19 @@ public class OkClient {
         int resStatus = response.code();
         if (resStatus >= 200 && resStatus < 400) {
             //System.out.println("Chat requests: " + res);
-            ResponseArray resObj = gson.fromJson(res, ResponseArray.class);
-            if (!resObj.status.equals("VALID")) return 1;
+            ResponseObj resObj = gson.fromJson(res, ResponseObj.class);
+            if (!resObj.status.equals(GOOD_RES)){
+                System.out.println("Invalid response");
+                return null;
+            }
             //System.out.println("Status was good");
-            ChatRequest[] tempReqs = gson.fromJson(resObj.message, ChatRequest[].class);
+            ChatRequest[] tempReqs = gson.fromJson(resObj.message.get("requests"), ChatRequest[].class);
             for (ChatRequest req : tempReqs){
                 requestList.add(req);
             }
+            return resObj.message.get("currentTime").getAsString();
         }
-        return 1;
+        return null;
     }
 
     public void setURL(String add){

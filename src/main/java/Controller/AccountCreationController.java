@@ -38,8 +38,6 @@ public class AccountCreationController {
         //user created succesfully
         if (check == 0) {
             System.out.printf("User created with id: %s%n", user.id);
-            ConnectionManager connectionManager = new ConnectionManager(user);
-            int port = connectionManager.connectToStun();
             Node source = (Node) actionEvent.getSource();
             Stage theStage = (Stage) source.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/friends.fxml"));

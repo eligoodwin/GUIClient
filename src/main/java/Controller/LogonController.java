@@ -28,8 +28,6 @@ public class LogonController {
         //logon
         if(attemptLogon()){
             //get ip info into stun server
-            ConnectionManager connectionManager = new ConnectionManager(user);
-            int port = connectionManager.connectToStun();
 
             Node source = (Node) actionEvent.getSource();
             Stage theStage = (Stage) source.getScene().getWindow();

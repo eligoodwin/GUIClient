@@ -107,6 +107,7 @@ public class ConnectionManager {
                 return;
             }
             catch(IOException e){
+                System.out.println("Socket exception, trying next port");
                 nextPort++;
             }
         }

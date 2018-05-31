@@ -40,7 +40,7 @@ import java.util.concurrent.FutureTask;
 public class FriendsController{
     private static final String FRIEND_ACCEPTED = "2";
     private static final long REQ_LISTEN_REFRESH = 2000;
-    private static final long MAX_REQUEST_DIFF = 10000;
+    private static final long MAX_REQUEST_DIFF = 15000;
     private boolean running = true;
     private boolean acceptConnection = false;
     private OkClient client = null;
@@ -289,7 +289,10 @@ public class FriendsController{
         //get selected friend from listview
         FriendData friend = friendsList.getSelectionModel().getSelectedItem();
         //check if friend is accepted
-        if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) return;
+        if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) {
+            startRequestHandler();
+            return;
+        }
         //TODO: popup window letting person know you can't connect to people that aren't friends
 
         ChatRequest req;
@@ -331,9 +334,9 @@ public class FriendsController{
     }
 
     //Should only ever be called from checkRequests
-    private synchronized void removeStaleRequests(){
+    private synchronized void removeStaleRequests(String currentTime){
         for(ChatRequest req : chatRequests){
-            if (getDateDifference(req.date) > MAX_REQUEST_DIFF){
+            if (getDateDifference(req.date, currentTime) > MAX_REQUEST_DIFF){
                 chatRequests.remove(req);
             }
         }
@@ -343,18 +346,14 @@ public class FriendsController{
     // Returns difference in seconds between now and dateFormat if difference is within limit
     // Returns -1 if there is an error or difference is outside of allowable limit
     // Source: https://stackoverflow.com/a/20165708/2487475
-    private synchronized int getDateDifference(String dateFormat){
+    private synchronized int getDateDifference(String dateFormat, String currentTime){
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMDD_HHmmss");
         try {
-            Date input = format.parse(dateFormat);
-            Date current = Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles")).getTime();
-            long diff = current.getTime() - input.getTime();
+            Date request = format.parse(dateFormat);
+            Date now = format.parse(currentTime);
+            long diff = now.getTime() - request.getTime();
             //System.out.println("Difference: " + diff);
-            if (diff < MAX_REQUEST_DIFF){
-                //System.out.println("Request found less than diff: " + diff);
-                return (int)diff;
-            }
-            return -1;
+            return (int)diff;
         }
         catch(ParseException e){
             e.printStackTrace();
@@ -420,13 +419,13 @@ public class FriendsController{
         return false;
     }
 
-    private synchronized ChatRequest handleRequests(ArrayList<ChatRequest> newRequests){
+    private synchronized ChatRequest handleRequests(ArrayList<ChatRequest> newRequests, String currentTime){
         //For each request check if it occurred within the desired time frame
         //  and it has not been processed before
         for(ChatRequest req : newRequests) {
-            int check = getDateDifference(req.date);
+            int check = getDateDifference(req.date, currentTime);
             boolean contains = requestsContains(req);
-            if (check > 0 && !contains) {
+            if (!contains && check > 0 && check < MAX_REQUEST_DIFF) {
                 chatRequests.add(req);
                 //Source: https://stackoverflow.com/a/13804542/2487475
                 final FutureTask query = new FutureTask(new Callable(){
@@ -495,45 +494,48 @@ public class FriendsController{
             UserData threadUser = getUser();
             ArrayList<ChatRequest> newRequests = new ArrayList<>();
             if(threadUser == null) return;
+            String currentServerTime = null;
             //while not connected - this should change for multiple connections functionality
             while(getRunning()){
-                    if(loopCount > 5){
-                        removeStaleRequests();
-                        loopCount = 0;
+                newRequests.clear();
+                try {
+                    currentServerTime = threadClient.getChatRequests(threadUser, newRequests);
+                    acceptedRequest = handleRequests(newRequests, currentServerTime);
+                    if(acceptedRequest != null){
                         final FutureTask update = new FutureTask(new Callable(){
                             @Override
                             public Object call() throws Exception{
-                                return updateFriendsList();
+                                return openChatWindow(acceptedRequest);
                             }
                         });
                         Platform.runLater(update);
-                        try {
-                            update.get();
-                        }
-                        catch(Exception e){
-                            e.printStackTrace();
-                        }
                     }
-                    newRequests.clear();
+                }
+                catch(IOException e){
+                    e.printStackTrace();
+                    //TODO: figure out how to handle this gracefully
+                    break;
+                }
+                loopCount++;
+                if(loopCount > 5){
+                    if(currentServerTime != null) {
+                        removeStaleRequests(currentServerTime);
+                    }
+                    loopCount = 0;
+                    final FutureTask update = new FutureTask(new Callable(){
+                        @Override
+                        public Object call() throws Exception{
+                            return updateFriendsList();
+                        }
+                    });
+                    Platform.runLater(update);
                     try {
-                        threadClient.getChatRequests(threadUser, newRequests);
-                        acceptedRequest = handleRequests(newRequests);
-                        if(acceptedRequest != null){
-                            final FutureTask update = new FutureTask(new Callable(){
-                                @Override
-                                public Object call() throws Exception{
-                                    return openChatWindow(acceptedRequest);
-                                }
-                            });
-                            Platform.runLater(update);
-                        }
+                        update.get();
                     }
-                    catch(IOException e){
+                    catch(Exception e){
                         e.printStackTrace();
-                        //TODO: figure out how to handle this gracefully
-                        break;
                     }
-                    loopCount++;
+                } // if loop > 5
                 //always sleep
                 try {
                     Thread.sleep(REQ_LISTEN_REFRESH);
@@ -545,7 +547,5 @@ public class FriendsController{
         } //while running
         System.out.println("Exitted checking for chat requests");
         //Tell the main JavaFX thread to call the attemptConnection function
-
     }
-
 }
