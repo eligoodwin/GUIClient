@@ -1,14 +1,22 @@
 package PeerNetworking;
 
 import Controller.ChatInterface;
+import Cryptography.AssymEncypt;
 import QueryObjects.ChatMessage;
 import QueryObjects.ChatRequest;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
+import Util.JSONhelper;
 import com.google.gson.Gson;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.net.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.concurrent.TimeoutException;
 
 public class PeerConnection {
@@ -29,6 +37,7 @@ public class PeerConnection {
     private Thread testServer;
     private String peerIP;
     private ChatInterface parentWindow = null;
+    private AssymEncypt encypt;
 
     public synchronized UserData getUser(){return user;}
 
@@ -80,6 +89,15 @@ public class PeerConnection {
         this.peerIP = friend.ipAddress;
         this.localPort = Integer.parseInt(user.peerServerPort);
         this.peerPort = Integer.parseInt(friend.peerServerPort);
+        try {
+            this.encypt = new AssymEncypt();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            System.exit(1);
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 
     public PeerConnection(UserData usr, ChatRequest req) throws IOException {
@@ -98,6 +116,15 @@ public class PeerConnection {
             this.peerPort = Integer.parseInt(req.targetPort);
         }
         this.localPort = Integer.parseInt(user.peerServerPort);
+        try {
+            this.encypt = new AssymEncypt();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            System.exit(1);
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
 
     }
 
@@ -131,6 +158,7 @@ public class PeerConnection {
     }
 
     public int connectNatPunch(int port){
+        JSONhelper jsonHelper = new JSONhelper();
         localPort = port;
         int attemptCount = 0;
         do {
@@ -142,15 +170,29 @@ public class PeerConnection {
                 System.out.println("Attempting connection, ip:port " + peerIP + ":" + peerPort);
                 connectionClient.connect(new InetSocketAddress(peerIP, peerPort), 15 * 1000);
                 //TODO: share keys and verify tokens
-                sendMessage("Initial message from user");
-                System.out.println(getMessage());
+                String initialMessage = "\"key\": \""+ encypt.getPublicKeyString() + "\", " +
+                        "\"token\" : \"" + token +"\"";
+                sendMessage(initialMessage);
+
+                //get message
+                String receivedMessage = getMessage();
+                jsonHelper.parseBody(receivedMessage);
+                String friendPublicKey = jsonHelper.getValueFromKey("key");
+                //make public key
+                encypt.setFriendPublicKey(friendPublicKey);
+                //System.out.println(getMessage());
+                System.out.println(receivedMessage);
                 System.out.flush();
             } catch (SocketException s) {
                 s.printStackTrace();
-                return -1;
             } catch (IOException e) {
                 e.printStackTrace();
-                return -1;
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            } catch (InvalidKeySpecException e) {
+                e.printStackTrace();
+                System.out.println("Could not parse encryption key");
+                System.exit(5);
             }
             attemptCount++;
         }while(!connectionClient.isConnected() && attemptCount < 10);
@@ -196,7 +238,7 @@ public class PeerConnection {
             //TODO: this is probably not a good hack - prevents trying to send
             //  messages to windows that don't yet exist
             Thread.sleep(1000);
-            parentWindow.sendMessageToWindow("Starting reception");
+            parentWindow.sendMessageToWindow("Starting reception\n");
         }
         catch(InterruptedException e){
             e.printStackTrace();
@@ -217,12 +259,22 @@ public class PeerConnection {
                     }
                     else {
                         ChatMessage message = gson.fromJson(msg, ChatMessage.class);
-                        parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(message.message));
-                    }
-                    System.out.println(msg);
-                }
-            }
-        }
+                        try {
+                            System.out.println(message.message);
+                            String decrpytedMessage = encypt.decryptString(message.message);
+                            System.out.println(decrpytedMessage);
+                            parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(decrpytedMessage));
+                        } catch (InvalidKeyException e) {
+                            e.printStackTrace();
+                        } catch (BadPaddingException e) {
+                            e.printStackTrace();
+                        } catch (IllegalBlockSizeException e) {
+                            e.printStackTrace();
+                        }
+                    }//else - not jaden
+                } //else if client is connected && parent not null
+            } //while running
+        }//try
         catch(IOException e){
             e.printStackTrace();
         }
@@ -245,17 +297,28 @@ public class PeerConnection {
     public int sendMessage(String msg){
         //TODO: close connection on window close or program shutdown
         if (connectionClient == null) return 1;
-        ChatMessage message = new ChatMessage(token, msg);
-        String json = gson.toJson(message);
-        System.out.println(json);
         try {
-            PrintWriter out =
-                    new PrintWriter(connectionClient.getOutputStream(), true);
-            out.println(json);
-        }
-        catch(IOException e){
+            String encryptedMessage = encypt.encryptString(msg);
+            ChatMessage message = new ChatMessage(token, encryptedMessage);
+            String json = gson.toJson(message);
+            System.out.println(json);
+            try {
+                PrintWriter out =
+                        new PrintWriter(connectionClient.getOutputStream(), true);
+                out.println(json);
+            }
+            catch(IOException e){
+                e.printStackTrace();
+                return -1;
+            }
+        } catch (InvalidKeyException e) {
             e.printStackTrace();
-            return -1;
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
         }
         return 0;
     }
