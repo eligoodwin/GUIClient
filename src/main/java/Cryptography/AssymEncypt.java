@@ -12,28 +12,40 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 
 public class AssymEncypt {
-    private static final String ENCRYPTION_TYPE = "RSA";
-    private static final int KEY_LENGTH = 2096;
+    private final String ENCRYPTION_TYPE = "RSA";
+    private final int KEY_LENGTH = 2096;
     private Cipher cipher;
     private KeyPair keyPair;
 
-    private static PublicKey publicKey;
-    private static PrivateKey privateKey;
+    private static PublicKey publicKey = null;
+    private static PrivateKey privateKey = null;
     private  PublicKey friendKey;
     private KeyPairGenerator keyGen;
+    private PublicKey selfPublicKey;
+    private PrivateKey selfPrivateKey;
 
 
-    public AssymEncypt() throws NoSuchAlgorithmException, NoSuchPaddingException {
+    public static synchronized AssymEncypt getAssymEncypt() throws NoSuchAlgorithmException, NoSuchPaddingException {
+        return new AssymEncypt();
+    }
+
+    private AssymEncypt() throws NoSuchAlgorithmException, NoSuchPaddingException {
         keyGen = KeyPairGenerator.getInstance(ENCRYPTION_TYPE);
         keyGen.initialize(KEY_LENGTH);
         keyPair = keyGen.generateKeyPair();
-        privateKey = keyPair.getPrivate();
-        publicKey = keyPair.getPublic();
+        if (privateKey == null) {
+            privateKey = keyPair.getPrivate();
+            selfPrivateKey = privateKey;
+        }
+        if (publicKey == null) {
+            publicKey = keyPair.getPublic();
+            selfPublicKey = publicKey;
+        }
         cipher = Cipher.getInstance(ENCRYPTION_TYPE);
     }
 
     public String getPublicKeyString() {
-        return Base64.encodeBase64String(publicKey.getEncoded());
+        return Base64.encodeBase64String(selfPublicKey.getEncoded());
     }
 
     public void setFriendPublicKey(String key) throws InvalidKeySpecException, NoSuchAlgorithmException {
@@ -46,7 +58,7 @@ public class AssymEncypt {
     }
 
     public String decryptString(String input) throws InvalidKeyException, BadPaddingException, IllegalBlockSizeException, UnsupportedEncodingException {
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        cipher.init(Cipher.DECRYPT_MODE, selfPrivateKey);
         return new String(cipher.doFinal(Base64.decodeBase64(input)), "UTF-8");
     }
 

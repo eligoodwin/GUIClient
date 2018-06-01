@@ -172,7 +172,7 @@ public class PeerConnection {
                 //TODO: share keys and verify tokens
                 String initialMessage = "\"key\": \""+ encypt.getPublicKeyString() + "\", " +
                         "\"token\" : \"" + token +"\"";
-                sendMessage(initialMessage);
+                sendMessageNoCrypt(initialMessage);
 
                 //get message
                 String receivedMessage = getMessage();
@@ -185,14 +185,17 @@ public class PeerConnection {
                 System.out.flush();
             } catch (SocketException s) {
                 s.printStackTrace();
+                return -2;
             } catch (IOException e) {
                 e.printStackTrace();
+                return -1;
             } catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();
+                return 1;
             } catch (InvalidKeySpecException e) {
                 e.printStackTrace();
                 System.out.println("Could not parse encryption key");
-                System.exit(5);
+                return 2;
             }
             attemptCount++;
         }while(!connectionClient.isConnected() && attemptCount < 10);
@@ -292,6 +295,23 @@ public class PeerConnection {
     public String getMessage() throws IOException {
         BufferedReader bufferedReader = getBuffer(connectionClient);
         return bufferedReader.readLine();
+    }
+
+    public int sendMessageNoCrypt(String msg){
+        if (connectionClient == null) return 1;
+        ChatMessage message = new ChatMessage(token, msg);
+        String json = gson.toJson(message);
+        System.out.println(json);
+        try {
+            PrintWriter out =
+                    new PrintWriter(connectionClient.getOutputStream(), true);
+            out.println(json);
+        }
+        catch(IOException e){
+            e.printStackTrace();
+            return -1;
+        }
+        return 0;
     }
 
     public int sendMessage(String msg){

@@ -33,7 +33,7 @@ public class ConnectionManager {
     private Socket nextSocket = null;
 
 
-    public ConnectionManager(UserData usr){
+    private ConnectionManager(UserData usr){
         user = usr;
     }
 
