@@ -80,7 +80,9 @@ public class ConnectionManager {
     }
 
     private void findNextSocket() throws SocketException {
-        if (nextPort > 65535) throw new SocketException();
+        if (nextPort > 65535){
+            nextPort = 15000;
+        }
         while (true) {
             try {
                 nextSocket = new Socket();
@@ -100,7 +102,7 @@ public class ConnectionManager {
                     e.printStackTrace();
                     System.out.println("Socket receive timeout");
                     nextSocket.close();
-                    return;
+                    throw new SocketException();
                 }
                 nextSocket.close();
                 System.out.println("Good STUN Response:" + res);
