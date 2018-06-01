@@ -10,7 +10,7 @@ public class STUNRegistration {
     public String API_TOKEN;
     public String username;
     public String token;
-    public String localIPAddress;
+    public String localIPaddress;
 
 
     public STUNRegistration(UserData user, String api_token){
@@ -18,10 +18,10 @@ public class STUNRegistration {
         username = user.username;
         token = user.token;
         try {
-            localIPAddress = findLocalIPAddress();
+            localIPaddress = findLocalIPAddress();
         } catch (UnknownHostException e) {
             e.printStackTrace();
-            localIPAddress = null;
+            localIPaddress = null;
             System.out.println("Could not determine local address");
         }
     }
