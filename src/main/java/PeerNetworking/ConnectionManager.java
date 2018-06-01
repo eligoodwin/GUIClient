@@ -64,9 +64,9 @@ public class ConnectionManager {
                 STUNRegistration validation = new STUNRegistration(user, API_TOKEN);
                 String message = gson.toJson(validation);
                 sendMessage(message);
-//                String response = getMessage(); ? response from stun server ?
+                String response = getMessage(); //? response from stun server ?
 //                String response = "nope";
-//                System.out.printf("RESPONSE FROM STUN: %s\n", response);
+                System.out.printf("RESPONSE FROM STUN: %s\n", response);
                 badPort = false;
                 nextSocket.close();
             } catch (IOException e) {

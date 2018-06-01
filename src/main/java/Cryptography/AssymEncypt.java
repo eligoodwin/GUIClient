@@ -19,6 +19,7 @@ public class AssymEncypt {
 
     private static PublicKey publicKey;
     private static PrivateKey privateKey;
+    private  PublicKey friendKey;
     private KeyPairGenerator keyGen;
 
 
@@ -31,20 +32,16 @@ public class AssymEncypt {
         cipher = Cipher.getInstance(ENCRYPTION_TYPE);
     }
 
-    public PublicKey getPublicKey(){
-        return publicKey;
-    }
-
     public String getPublicKeyString() {
         return Base64.encodeBase64String(publicKey.getEncoded());
     }
 
-    public PrivateKey getPrivateKey() {
-        return privateKey;
+    public void setFriendPublicKey(String key) throws InvalidKeySpecException, NoSuchAlgorithmException {
+        makePublicKeyFromString(key);
     }
 
-    public String encryptString(String message, PublicKey publicKey) throws InvalidKeyException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException {
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+    public String encryptString(String message) throws InvalidKeyException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException {
+        cipher.init(Cipher.ENCRYPT_MODE, friendKey);
         return Base64.encodeBase64String(cipher.doFinal(message.getBytes("UTF-8")));
     }
 
@@ -54,10 +51,10 @@ public class AssymEncypt {
     }
 
     //this method is used to
-    public PublicKey makePublicKeyFromString(String sentPublicKey) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    private void makePublicKeyFromString(String sentPublicKey) throws NoSuchAlgorithmException, InvalidKeySpecException {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(Base64.decodeBase64(sentPublicKey.getBytes()));
         KeyFactory keyFactory = KeyFactory.getInstance(ENCRYPTION_TYPE);
-        return keyFactory.generatePublic(spec);
+        friendKey = keyFactory.generatePublic(spec);
     }
 
 
