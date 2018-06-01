@@ -170,7 +170,8 @@ public class PeerConnection {
                 System.out.println("Attempting connection, ip:port " + peerIP + ":" + peerPort);
                 connectionClient.connect(new InetSocketAddress(peerIP, peerPort), 15 * 1000);
                 //TODO: share keys and verify tokens
-                String initialMessage = "\"key\": \""+ encypt.getPublicKeyString() + "\"";
+                String initialMessage = "\"key\": \""+ encypt.getPublicKeyString() + "\", " +
+                        "\"token\" : \"" + token +"\"";
                 sendMessage(initialMessage);
 
                 //get message

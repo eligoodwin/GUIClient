@@ -61,12 +61,12 @@ public class ConnectionManager {
                 nextSocket.setReuseAddress(true);
                 nextSocket.bind(new InetSocketAddress(nextPort));
                 nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
-                STUNRegistration validation = new STUNRegistration(user, API_TOKEN);
+                STUNRegistration validation = new STUNRegistration(user, API_TOKEN, nextPort);
                 String message = gson.toJson(validation);
                 sendMessage(message);
-                String response = getMessage(); //? response from stun server ?
-//                String response = "nope";
-                System.out.printf("RESPONSE FROM STUN: %s\n", response);
+//                String response = getMessage(); //? response from stun server ?
+////                String response = "nope";
+//                System.out.printf("RESPONSE FROM STUN: %s\n", response);
                 badPort = false;
                 nextSocket.close();
             } catch (IOException e) {
@@ -85,7 +85,7 @@ public class ConnectionManager {
                 nextSocket.setReuseAddress(true);
                 nextSocket.bind(new InetSocketAddress(nextPort));
                 nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
-                STUNRegistration validation = new STUNRegistration(user, API_TOKEN);
+                STUNRegistration validation = new STUNRegistration(user, API_TOKEN, nextPort);
                 String json = gson.toJson(validation);
                 System.out.println(json);
                 sendMessage(json);
