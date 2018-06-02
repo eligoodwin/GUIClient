@@ -289,7 +289,9 @@ public class PeerConnection {
         if (connectionClient != null){
             try{
                 System.out.println("Closing connection");
-                connectionClient.close();
+                if (!connectionClient.isClosed()) {
+                    connectionClient.close();
+                }
             }
             catch(IOException e){
                 e.printStackTrace();
@@ -374,7 +376,7 @@ public class PeerConnection {
         }
         if (connectionClient != null){
             try {
-                if(connectionClient.isConnected()) {
+                if(!connectionClient.isClosed()) {
                     connectionClient.close();
                 }
             }
