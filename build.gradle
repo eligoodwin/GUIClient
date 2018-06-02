@@ -17,3 +17,15 @@ dependencies {
     compile 'com.googlecode.json-simple:json-simple:1.1.1'
     compile group: 'commons-codec', name: 'commons-codec', version: '1.9'
 }
+
+jar {
+    baseName= 'GuiClient'
+    version= '0.1'
+
+    manifest{
+        attributes 'Main-Class': 'Main'
+    }
+    from{
+        configurations.compile.collect {it.isDirectory() ? it : zipTree(it)}
+    }
+}
