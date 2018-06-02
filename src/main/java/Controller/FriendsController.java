@@ -494,7 +494,8 @@ public class FriendsController{
                     controller.endConnection();
                 }
             });
-            theStage.setTitle(friend.friend_name);;
+            String title = "Chatting with " + friend.friend_name;
+            theStage.setTitle(title);;
             theStage.setScene(chatScene);
             theStage.show();
             nextPort = manager.getNextSocket();

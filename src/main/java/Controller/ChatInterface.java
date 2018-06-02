@@ -5,15 +5,20 @@ import QueryObjects.ChatRequest;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
 import TestBot.JadenSmithBot;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.text.Text;
 
 import java.io.IOException;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
 
 public class ChatInterface {
 
@@ -26,6 +31,11 @@ public class ChatInterface {
     private int port;
     private PeerConnection peer = null;
     private Thread startupThread = null;
+
+    @FXML
+    private AnchorPane connectingPane;
+    @FXML
+    private Text connectingText;
 
     @FXML
     public void initialize(){
@@ -42,10 +52,19 @@ public class ChatInterface {
         startupThread.start();
     }
 
-    private void beginReceiving(){
+    private int beginReceiving(){
         peer.setParentWindow(this);
         peer.setFriend(friend);
         peer.startReceiving();
+        connectingPane.toBack();
+        connectingPane.setStyle("-fx-background-color: white;");
+        connectingText.setText("");
+        return 0;
+    }
+
+    private int connectionFailed(){
+        connectingText.setText("Connection Failed");
+        return 0;
     }
 
     class StartupThread implements Runnable{
@@ -60,8 +79,22 @@ public class ChatInterface {
             //TODO: handle closing window during thread
             //if connected:
             if (status == 0) {
-                //TODO: adjust window
-                parentWindow.beginReceiving();
+                final FutureTask beginChat = new FutureTask(new Callable(){
+                    @Override
+                    public Object call() throws Exception{
+                        return beginReceiving();
+                    }
+                });
+                Platform.runLater(beginChat);
+            }
+            else{
+                final FutureTask alertUser = new FutureTask(new Callable(){
+                    @Override
+                    public Object call() throws Exception{
+                        return connectionFailed();
+                    }
+                });
+                Platform.runLater(alertUser);
             }
         }
 
