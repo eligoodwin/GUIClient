@@ -103,6 +103,7 @@ public class FriendsController{
                     return;
                 }
                 int friendStatus = Integer.parseInt(friend.requestStatus);
+                friendMutex.lock();
                 if(friendStatus == 0){
                     this.setItem(null);
                     //friendsList.getItems().remove(friend);
@@ -138,13 +139,17 @@ public class FriendsController{
                     //friendsList.refresh();
                     System.out.println("Request status: " + friend.requestStatus);
                 }
+                friendMutex.unlock();
             }
         }//end update
     }
 
     private synchronized FriendData findFriend(String friendName){
-        if (fList.size() < 1) return null;
         friendMutex.lock();
+        if (fList.size() < 1){
+            friendMutex.unlock();
+            return null;
+        }
         for (int i = 0; i < fList.size(); i++){
             FriendData temp = fList.get(i);
             if (temp.friend_name.equals(friendName)){
@@ -158,8 +163,11 @@ public class FriendsController{
     }
 
     int findFriendIndex(FriendData friend){
-        if (fList.size() < 1) return -1;
         friendMutex.lock();
+        if (fList.size() < 1){
+            friendMutex.unlock();
+            return -1;
+        }
         for (int i = 0; i < fList.size(); i++){
             FriendData temp = fList.get(i);
             if (temp.friendID == friend.friendID && temp.friend_name.equals(friend.friend_name)){
