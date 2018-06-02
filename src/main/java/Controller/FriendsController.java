@@ -486,13 +486,15 @@ public class FriendsController{
         try {
             Parent root = loader.<Parent>load();
             ChatInterface controller = loader.<ChatInterface>getController();
-            controller.startConnection(user, findFriendFromRequest(req), req, nextPort);
+            FriendData friend = findFriendFromRequest(req);
+            controller.startConnection(user, friend, req, nextPort);
             Scene chatScene = new Scene(root);
             theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
                 public void handle(WindowEvent we) {
                     controller.endConnection();
                 }
             });
+            theStage.setTitle(friend.friend_name);;
             theStage.setScene(chatScene);
             theStage.show();
             nextPort = manager.getNextSocket();
