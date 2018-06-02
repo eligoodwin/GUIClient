@@ -13,7 +13,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 public class AssymEncypt {
     private final String ENCRYPTION_TYPE = "RSA";
-    private final int KEY_LENGTH = 2048;
+    private final int KEY_LENGTH = 4096;
     private Cipher cipher;
     private KeyPair keyPair;
 
