@@ -9,6 +9,7 @@ public class ChatRequest {
     public String targetPort = null;
     public String requestingUser;
     public String requestingIPaddress = null;
+    public String requestingLocalIPaddress = null;
     public String requestingPort = null;
     @SerializedName("API token")
     public String API_token;

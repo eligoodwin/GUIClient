@@ -22,6 +22,7 @@ public class OkClient {
     private final static String API_TOKEN = "fXtas7yB2HcIVoCyyQ78";
     //Server: http://104.168.134.135:8080
     private final static String SERVER_ADDRESS = "http://104.168.134.135:8080";
+    //private final static String SERVER_ADDRESS = "http://localhost:8080";
     private static Gson gson = new Gson();
     //Source: https://stackoverflow.com/questions/4802887/gson-how-to-exclude-specific-fields-from-serialization-without-annotations
     private static Gson exGson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
@@ -56,7 +57,10 @@ public class OkClient {
                 user.id = Long.parseLong(resObj.message.get("id").toString());
                 return 0;
             }
-            //TODO: retry route
+            else {
+                System.out.println("Bad response in logon");
+                //TODO: retry route
+            }
         }
         return 1;
     }
@@ -82,6 +86,7 @@ public class OkClient {
             user.id = tempUser.id;
             return 0;
         }
+        System.out.println("Error in addUser");
         return 1;
     }
 
@@ -232,8 +237,8 @@ public class OkClient {
         return null;
     }
 
-    public int getChatRequests(UserData current, ArrayList<ChatRequest> requestList) throws IOException{
-        if (url.equals("")) return -1;
+    public String getChatRequests(UserData current, ArrayList<ChatRequest> requestList) throws IOException{
+        if (url.equals("")) return null;
         Request request = new Request.Builder()
                 .addHeader("Authorization", "Bearer" + current.token)
                 .url(url + "/user/" + current.id + "/chat")
@@ -244,16 +249,19 @@ public class OkClient {
         int resStatus = response.code();
         if (resStatus >= 200 && resStatus < 400) {
             //System.out.println("Chat requests: " + res);
-            ResponseArray resObj = gson.fromJson(res, ResponseArray.class);
-            if (!resObj.status.equals("VALID")) return 1;
+            ResponseObj resObj = gson.fromJson(res, ResponseObj.class);
+            if (!resObj.status.equals(GOOD_RES)){
+                System.out.println("Invalid response");
+                return null;
+            }
             //System.out.println("Status was good");
-            ChatRequest[] tempReqs = gson.fromJson(resObj.message, ChatRequest[].class);
+            ChatRequest[] tempReqs = gson.fromJson(resObj.message.get("requests"), ChatRequest[].class);
             for (ChatRequest req : tempReqs){
                 requestList.add(req);
             }
+            return resObj.message.get("currentTime").getAsString();
         }
-
-        return 1;
+        return null;
     }
 
     public void setURL(String add){

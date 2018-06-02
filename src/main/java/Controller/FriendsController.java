@@ -25,6 +25,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
+import sun.awt.Mutex;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -34,18 +35,16 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
 //Source for ListView: https://www.youtube.com/watch?v=9uubyM6oHAY
 public class FriendsController{
     private static final String FRIEND_ACCEPTED = "2";
     private static final long REQ_LISTEN_REFRESH = 2000;
-    private static final long MAX_REQUEST_DIFF = 10000;
-    //0 for open, 1 for attempting connection, 2 for connected
-    private int connectionStatus = 0;
+    private static final long MAX_REQUEST_DIFF = 15000;
     private boolean acceptConnection = false;
-    private boolean running = true;
+    private boolean handlingRequest = false;
+    private Mutex friendMutex = new Mutex();
     private OkClient client = null;
     private UserData user = null;
     private ArrayList<ChatRequest> chatRequests = new ArrayList<>();
@@ -70,13 +69,9 @@ public class FriendsController{
         return user;
     }
 
-    private synchronized boolean getRunning() {
-        return running;
-    }
+    private synchronized  void setHandlingRequest(boolean status){handlingRequest = status;}
 
-    private synchronized void setRunning(boolean run) {
-        this.running = run;
-    }
+    private synchronized  boolean getHandlingRequest(){return handlingRequest;}
 
     public void setAcceptConnection(boolean acceptConnection) {
         this.acceptConnection = acceptConnection;
@@ -147,23 +142,33 @@ public class FriendsController{
         }//end update
     }
 
-    FriendData findFriend(String friendName){
+    private synchronized FriendData findFriend(String friendName){
         if (fList.size() < 1) return null;
+        friendMutex.lock();
         for (int i = 0; i < fList.size(); i++){
             FriendData temp = fList.get(i);
-            if (temp.friend_name.equals(friendName)) return temp;
+            if (temp.friend_name.equals(friendName)){
+                friendMutex.unlock();
+                return temp;
+            }
         }
+        friendMutex.unlock();
         //not found
         return null;
     }
 
     int findFriendIndex(FriendData friend){
         if (fList.size() < 1) return -1;
+        friendMutex.lock();
         for (int i = 0; i < fList.size(); i++){
             FriendData temp = fList.get(i);
-            if (temp.friendID == friend.friendID && temp.friend_name.equals(friend.friend_name)) return i;
+            if (temp.friendID == friend.friendID && temp.friend_name.equals(friend.friend_name)){
+                friendMutex.unlock();
+                return i;
+            }
         }
         //not found
+        friendMutex.unlock();
         return -1;
     }
 
@@ -174,6 +179,7 @@ public class FriendsController{
 
     synchronized int updateFriendsList(){
         if (getUser() == null) return -1;
+        friendMutex.lock();
         if (fList.size() != 0) fList.clear();
         if (friendsList != null) friendsList.getItems().clear();
         if (friends != null) friends.clear();
@@ -199,13 +205,20 @@ public class FriendsController{
             });
             friendsList.refresh();
         }
+        friendMutex.unlock();
         return 0;
     }
 
-    void initData(UserData usr, int port){
+    void initData(UserData usr){
         System.out.println("Trace: in initData");
         user = usr;
-        nextPort = port;
+        try {
+            manager = ConnectionManager.getConnectionManager(user);
+            nextPort = manager.getNextSocket();
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
         updateFriendsList();
         startRequestHandler();
     }
@@ -281,12 +294,20 @@ public class FriendsController{
     }
 
     public void requestChat(ActionEvent actionEvent){
-        //kill requestHandler thread to avoid interference
-        if (requestHandler.isAlive()) requestHandler.interrupt();
+        if(getHandlingRequest()){
+            System.out.println("Handle existing chat requests before making a new one.");
+            return;
+        }
+        setHandlingRequest(true);
+        friendMutex.lock();
         //get selected friend from listview
         FriendData friend = friendsList.getSelectionModel().getSelectedItem();
         //check if friend is accepted
-        if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) return;
+        if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) {
+            setHandlingRequest(false);
+            friendMutex.unlock();
+            return;
+        }
         //TODO: popup window letting person know you can't connect to people that aren't friends
 
         ChatRequest req;
@@ -295,55 +316,14 @@ public class FriendsController{
         }
         catch(IOException e){
             e.printStackTrace();
-            startRequestHandler();
+            friendMutex.unlock();
+            setHandlingRequest(false);
             return;
             //TODO: popup error message
         }
-        attemptConnection(req);
-    }
-
-    // old chat request method - natless
-    public void msgFriendNatless(ActionEvent actionEvent){
-        //get selected friend from listview
-        FriendData friend = friendsList.getSelectionModel().getSelectedItem();
-        //check if friend is accepted
-        if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) return;
-        //TODO: popup window letting person know you can't connect to people that aren't friends
-        //feed friend ip and port to PeerConnection
-        int ok = 1;
-        PeerConnection peer = null;
-        try {
-            peer = new PeerConnection(getUser(), friend);
-            //attempt connection
-            ok = peer.connectNatless();
-        }
-        catch(IOException e){
-            e.printStackTrace();
-        }
-        //if connection succesful open chatInterface
-        if (ok == 0){
-            Node source = (Node) actionEvent.getSource();
-            Stage theStage = (Stage)source.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatInterface.fxml"));
-            try {
-                Parent root = loader.<Parent>load();
-                ChatInterface controller = loader.<ChatInterface>getController();
-                controller.initController(peer, user, friend);
-                Scene chatScene = new Scene(root);
-                theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
-                    public void handle(WindowEvent we) {
-                        controller.endConnection();
-                    }
-                });
-                theStage.setScene(chatScene);
-            }
-            catch(IOException e){
-                e.printStackTrace();
-                System.out.println("Exception in requestChat");
-            }
-        }
-        //else popup
-        else System.out.println("Could not open peer connection. Error: " + ok);
+        //openChatWindow will setHandlingRequest(false)
+        friendMutex.unlock();
+        openChatWindow(req);
     }
 
     public void addFriend(){
@@ -372,9 +352,9 @@ public class FriendsController{
     }
 
     //Should only ever be called from checkRequests
-    private synchronized void removeStaleRequests(){
+    private synchronized void removeStaleRequests(String currentTime){
         for(ChatRequest req : chatRequests){
-            if (getDateDifference(req.date) > MAX_REQUEST_DIFF){
+            if (getDateDifference(req.date, currentTime) > MAX_REQUEST_DIFF){
                 chatRequests.remove(req);
             }
         }
@@ -384,18 +364,14 @@ public class FriendsController{
     // Returns difference in seconds between now and dateFormat if difference is within limit
     // Returns -1 if there is an error or difference is outside of allowable limit
     // Source: https://stackoverflow.com/a/20165708/2487475
-    private synchronized int getDateDifference(String dateFormat){
+    private synchronized int getDateDifference(String dateFormat, String currentTime){
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMDD_HHmmss");
         try {
-            Date input = format.parse(dateFormat);
-            Date current = Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles")).getTime();
-            long diff = current.getTime() - input.getTime();
+            Date request = format.parse(dateFormat);
+            Date now = format.parse(currentTime);
+            long diff = now.getTime() - request.getTime();
             //System.out.println("Difference: " + diff);
-            if (diff < MAX_REQUEST_DIFF){
-                //System.out.println("Request found less than diff: " + diff);
-                return (int)diff;
-            }
-            return -1;
+            return (int)diff;
         }
         catch(ParseException e){
             e.printStackTrace();
@@ -436,7 +412,7 @@ public class FriendsController{
         else{ System.out.println("Connection refused"); return 0;}
     }
 
-    private FriendData findFriendFromRequest(ChatRequest req){
+    private synchronized FriendData findFriendFromRequest(ChatRequest req){
         String friendName = "";
         //This user accepted the request
         if (req.targetUser.equals(user.username)){
@@ -447,38 +423,6 @@ public class FriendsController{
             friendName = req.targetUser;
         }
         return findFriend(friendName);
-    }
-
-    private int attemptConnection(ChatRequest req){
-        if (requestHandler.isAlive()){
-            try {
-                requestHandler.interrupt();
-                requestHandler.join();
-            }
-            catch(InterruptedException e){
-                e.printStackTrace();
-            }
-        }
-        try {
-            nextPeer = new PeerConnection(user, req);
-            int status = nextPeer.connectNatPunch(nextPort);
-            //TODO: handle different status
-            if (status != 0) nextPeer = null;
-        }
-        catch(IOException e){
-            e.printStackTrace();
-            nextPeer = null;
-        }
-        //Connection success
-        if (nextPeer != null){
-            openChatWindow(findFriendFromRequest(req));
-            return 0;
-        }
-        else{
-            nextPort = manager.getNextSocket();
-            startRequestHandler();
-        }
-        return 1;
     }
 
     private synchronized boolean requestsContains(ChatRequest req){
@@ -493,13 +437,13 @@ public class FriendsController{
         return false;
     }
 
-    private synchronized ChatRequest handleRequests(ArrayList<ChatRequest> newRequests){
+    private synchronized ChatRequest handleRequests(ArrayList<ChatRequest> newRequests, String currentTime){
         //For each request check if it occurred within the desired time frame
         //  and it has not been processed before
         for(ChatRequest req : newRequests) {
-            int check = getDateDifference(req.date);
+            int check = getDateDifference(req.date, currentTime);
             boolean contains = requestsContains(req);
-            if (check > 0 && !contains) {
+            if (!contains && check > 0 && check < MAX_REQUEST_DIFF) {
                 chatRequests.add(req);
                 //Source: https://stackoverflow.com/a/13804542/2487475
                 final FutureTask query = new FutureTask(new Callable(){
@@ -525,20 +469,16 @@ public class FriendsController{
         return null;
     }
 
-    private int openChatWindow(FriendData friend){
-        //TODO: don't need this if multiple connections?
-        try {
-            if (requestHandler != null) requestHandler.join(500);
-        }
-        catch(InterruptedException e){
-            e.printStackTrace();
-        }
-        Stage theStage = (Stage)friendsList.getScene().getWindow();
+    synchronized private int openChatWindow(ChatRequest req){
+        //Use current stage to hide friends window
+        //Stage theStage = (Stage)friendsList.getScene().getWindow();
+        //Use new stage to popup new window
+        Stage theStage = new Stage();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chatInterface.fxml"));
         try {
             Parent root = loader.<Parent>load();
             ChatInterface controller = loader.<ChatInterface>getController();
-            controller.initController(nextPeer, user, friend);
+            controller.startConnection(user, findFriendFromRequest(req), req, nextPort);
             Scene chatScene = new Scene(root);
             theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
                 public void handle(WindowEvent we) {
@@ -546,13 +486,16 @@ public class FriendsController{
                 }
             });
             theStage.setScene(chatScene);
+            theStage.show();
+            nextPort = manager.getNextSocket();
         }
         catch(IOException e){
             e.printStackTrace();
             System.out.println("Exception in requestChat");
+            setHandlingRequest(false);
             return 1;
         }
-
+        setHandlingRequest(false);
         return 0;
     }
 
@@ -563,40 +506,53 @@ public class FriendsController{
             UserData threadUser = getUser();
             ArrayList<ChatRequest> newRequests = new ArrayList<>();
             if(threadUser == null) return;
+            String currentServerTime = null;
             //while not connected - this should change for multiple connections functionality
-            while(getRunning()){
-                    if(loopCount > 5){
-                        removeStaleRequests();
-                        loopCount = 0;
-                        final FutureTask update = new FutureTask(new Callable(){
-                            @Override
-                            public Object call() throws Exception{
-                                return updateFriendsList();
-                            }
-                        });
-                        Platform.runLater(update);
-                        try {
-                            update.get();
-                        }
-                        catch(Exception e){
-                            e.printStackTrace();
-                        }
-                    }
+            while(true){
+                if(!getHandlingRequest()) {
+                    setHandlingRequest(true);
                     newRequests.clear();
                     try {
-                        threadClient.getChatRequests(threadUser, newRequests);
-                        acceptedRequest = handleRequests(newRequests);
-                        if(acceptedRequest != null){
-                            setRunning(false);
-                            break;
+                        currentServerTime = threadClient.getChatRequests(threadUser, newRequests);
+                        acceptedRequest = handleRequests(newRequests, currentServerTime);
+                        if (acceptedRequest != null) {
+                            final FutureTask update = new FutureTask(new Callable() {
+                                @Override
+                                public Object call() throws Exception {
+                                    return openChatWindow(acceptedRequest);
+                                }
+                            });
+                            Platform.runLater(update);
                         }
-                    }
-                    catch(IOException e){
+                        else{
+                            setHandlingRequest(false);
+                        }
+                    } catch (IOException e) {
                         e.printStackTrace();
                         //TODO: figure out how to handle this gracefully
+                        setHandlingRequest(false);
                         break;
                     }
-                    loopCount++;
+                    if(loopCount > 5 && currentServerTime != null) removeStaleRequests(currentServerTime);
+                    //setHandlingRequest(false) is handled by openChatWindow if a request is accepted
+                }//if handling request
+                loopCount++;
+                if(loopCount > 5){
+                    loopCount = 0;
+                    final FutureTask update = new FutureTask(new Callable(){
+                        @Override
+                        public Object call() throws Exception{
+                            return updateFriendsList();
+                        }
+                    });
+                    Platform.runLater(update);
+                    try {
+                        update.get();
+                    }
+                    catch(Exception e){
+                        e.printStackTrace();
+                    }
+                } // if loop > 5
                 //always sleep
                 try {
                     Thread.sleep(REQ_LISTEN_REFRESH);
@@ -608,12 +564,5 @@ public class FriendsController{
         } //while running
         System.out.println("Exitted checking for chat requests");
         //Tell the main JavaFX thread to call the attemptConnection function
-        final FutureTask update = new FutureTask(new Callable(){
-            @Override
-            public Object call() throws Exception{
-                return attemptConnection(acceptedRequest);
-            }
-        });
     }
-
 }

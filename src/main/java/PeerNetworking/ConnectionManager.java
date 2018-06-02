@@ -33,7 +33,7 @@ public class ConnectionManager {
     private Socket nextSocket = null;
 
 
-    public ConnectionManager(UserData usr){
+    private ConnectionManager(UserData usr){
         user = usr;
     }
 
@@ -45,7 +45,9 @@ public class ConnectionManager {
             e.printStackTrace();
             return -1;
         }
-        return nextPort;
+        int temp = nextPort;
+        nextPort++; //increment to avoid conflicts
+        return temp;
     }
 
     private void getNewPort(){
@@ -61,11 +63,11 @@ public class ConnectionManager {
                 nextSocket.setReuseAddress(true);
                 nextSocket.bind(new InetSocketAddress(nextPort));
                 nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
-                STUNRegistration validation = new STUNRegistration(user, API_TOKEN);
+                STUNRegistration validation = new STUNRegistration(user, API_TOKEN, nextPort);
                 String message = gson.toJson(validation);
                 sendMessage(message);
-//                String response = getMessage(); ? response from stun server ?
-//                String response = "nope";
+//                String response = getMessage(); //? response from stun server ?
+////                String response = "nope";
 //                System.out.printf("RESPONSE FROM STUN: %s\n", response);
                 badPort = false;
                 nextSocket.close();
@@ -78,34 +80,36 @@ public class ConnectionManager {
     }
 
     private void findNextSocket() throws SocketException {
-        nextSocket = new Socket();
-        if (nextPort > 65535) throw new SocketException();
-        while (!nextSocket.isConnected()) {
+        if (nextPort > 65535){
+            nextPort = 15000;
+        }
+        while (true) {
             try {
+                nextSocket = new Socket();
                 nextSocket.setReuseAddress(true);
                 nextSocket.bind(new InetSocketAddress(nextPort));
                 nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
-                STUNRegistration validation = new STUNRegistration(user, API_TOKEN);
+                STUNRegistration validation = new STUNRegistration(user, API_TOKEN, nextPort);
                 String json = gson.toJson(validation);
                 System.out.println(json);
                 sendMessage(json);
                 String res = "";
-
                 try {
+                    System.out.println("Connected to STUN on port: " + nextPort);
                     res = getMessage();
                 }
                 catch(SocketTimeoutException e){
                     e.printStackTrace();
                     System.out.println("Socket receive timeout");
                     nextSocket.close();
-                    return;
+                    throw new SocketException();
                 }
                 nextSocket.close();
-                System.out.println("Response:" + res);
-                System.out.println("Port: " + nextPort);
-                break;
+                System.out.println("Good STUN Response:" + res);
+                return;
             }
             catch(IOException e){
+                System.out.println("Socket exception, trying next port");
                 nextPort++;
             }
         }

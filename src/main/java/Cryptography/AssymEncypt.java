@@ -12,52 +12,66 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 
 public class AssymEncypt {
-    private static final String ENCRYPTION_TYPE = "RSA";
-    private static final int KEY_LENGTH = 2096;
+    private final String ENCRYPTION_TYPE = "RSA";
+    private final int KEY_LENGTH = 4096;
     private Cipher cipher;
     private KeyPair keyPair;
 
-    private static PublicKey publicKey;
-    private static PrivateKey privateKey;
+    private static PublicKey publicKey = null;
+    private static PrivateKey privateKey = null;
+    private  PublicKey friendKey;
     private KeyPairGenerator keyGen;
+    private PublicKey selfPublicKey;
+    private PrivateKey selfPrivateKey;
 
 
-    public AssymEncypt() throws NoSuchAlgorithmException, NoSuchPaddingException {
+    public static synchronized AssymEncypt getAssymEncypt() throws NoSuchAlgorithmException, NoSuchPaddingException {
+        return new AssymEncypt();
+    }
+
+    private AssymEncypt() throws NoSuchAlgorithmException, NoSuchPaddingException {
         keyGen = KeyPairGenerator.getInstance(ENCRYPTION_TYPE);
         keyGen.initialize(KEY_LENGTH);
         keyPair = keyGen.generateKeyPair();
-        privateKey = keyPair.getPrivate();
-        publicKey = keyPair.getPublic();
+        if (privateKey == null) {
+            privateKey = keyPair.getPrivate();
+            System.out.println("Generated private key");
+            System.out.println(privateKey.getEncoded());
+        }
+        selfPrivateKey = privateKey;
+        if (publicKey == null) {
+            publicKey = keyPair.getPublic();
+            System.out.println("Generated public key");
+            System.out.println(publicKey.getEncoded());
+        }
+        selfPublicKey = publicKey;
         cipher = Cipher.getInstance(ENCRYPTION_TYPE);
     }
 
-    public PublicKey getPublicKey(){
-        return publicKey;
-    }
-
     public String getPublicKeyString() {
-        return Base64.encodeBase64String(publicKey.getEncoded());
+        return Base64.encodeBase64String(selfPublicKey.getEncoded());
     }
 
-    public PrivateKey getPrivateKey() {
-        return privateKey;
+    public void setFriendPublicKey(String key) throws InvalidKeySpecException, NoSuchAlgorithmException {
+        makePublicKeyFromString(key);
     }
 
-    public String encryptString(String message, PublicKey publicKey) throws InvalidKeyException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException {
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+    public String encryptString(String message) throws InvalidKeyException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException {
+        cipher.init(Cipher.ENCRYPT_MODE, friendKey);
         return Base64.encodeBase64String(cipher.doFinal(message.getBytes("UTF-8")));
     }
 
     public String decryptString(String input) throws InvalidKeyException, BadPaddingException, IllegalBlockSizeException, UnsupportedEncodingException {
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        cipher.init(Cipher.DECRYPT_MODE, selfPrivateKey);
         return new String(cipher.doFinal(Base64.decodeBase64(input)), "UTF-8");
     }
 
     //this method is used to
-    public PublicKey makePublicKeyFromString(String sentPublicKey) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    private void makePublicKeyFromString(String sentPublicKey) throws NoSuchAlgorithmException, InvalidKeySpecException {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(Base64.decodeBase64(sentPublicKey.getBytes()));
         KeyFactory keyFactory = KeyFactory.getInstance(ENCRYPTION_TYPE);
-        return keyFactory.generatePublic(spec);
+        friendKey = keyFactory.generatePublic(spec);
+        System.out.println("Generated friend key: " + friendKey.toString());
     }
 
 
