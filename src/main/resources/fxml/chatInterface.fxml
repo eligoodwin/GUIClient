@@ -1,42 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.Pane?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<Pane maxHeight="400" maxWidth="600" minHeight="400" minWidth="600" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/9.0.4" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.ChatInterface">
-<children>
-    <TextField
-            fx:id="messageToSend"
-            layoutX="14.0"
-            layoutY="333.0"
-            prefHeight="53.0"
-            prefWidth="469.0"
-            promptText="Enter Message here" />
+<?import javafx.scene.text.Text?>
 
-    <TextArea
-            fx:id="messageWindow"
-            wrapText="true"
-            layoutX="14.0"
-            layoutY="14.0"
-            prefHeight="302.0"
-            prefWidth="469.0"
-            promptText="incoming messages" />
-    <Button
-            fx:id="sendButton"
-            layoutX="491.0"
-            layoutY="333.0"
-            defaultButton="true"
-            onAction="#sendMessage"
-            mnemonicParsing="false"
-            prefHeight="53.0"
-            prefWidth="100.0"
-            text="Send Message">
-        <font>
-            <Font size="12.0" />
-        </font>
-    </Button>
+<AnchorPane maxHeight="400"
+            maxWidth="600"
+            minHeight="400"
+            minWidth="600"
+            prefHeight="400.0"
+            prefWidth="600.0"
+            xmlns="http://javafx.com/javafx/8.0.121"
+            xmlns:fx="http://javafx.com/fxml/1"
+            stylesheets="/css/connecting.css"
+            fx:controller="Controller.ChatInterface">
+<children>
+      <StackPane fx:id="stackPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <Pane fx:id="doneConnectingPane" prefHeight="400.0" prefWidth="600.0">
+               <children>
+                <TextField fx:id="messageToSend" layoutX="14.0" layoutY="333.0" prefHeight="53.0" prefWidth="469.0" promptText="Enter Message here" />
+
+                      <TextArea fx:id="messageWindow" layoutX="14.0" layoutY="14.0" prefHeight="302.0" prefWidth="469.0" promptText="incoming messages" wrapText="true" />
+                <Button fx:id="sendButton" defaultButton="true" layoutX="486.0" layoutY="333.0" mnemonicParsing="false" onAction="#sendMessage" prefHeight="53.0" prefWidth="100.0" text="Send Message">
+                    <font>
+                        <Font size="12.0" />
+                    </font>
+                </Button>
+               </children>
+            </Pane>
+            <AnchorPane fx:id="connectingPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                <VBox alignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                   <children>
+                      <Text fx:id="connectingText" strokeType="OUTSIDE" strokeWidth="0.0" text="Connecting..." textAlignment="CENTER" wrappingWidth="469">
+                        <font>
+                           <Font size="24.0" />
+                        </font></Text>
+                   </children>
+                </VBox>
+            </AnchorPane>
+         </children>
+      </StackPane>
 
 </children>
-</Pane>
+</AnchorPane>
