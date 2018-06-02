@@ -13,7 +13,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 public class AssymEncypt {
     private final String ENCRYPTION_TYPE = "RSA";
-    private final int KEY_LENGTH = 2096;
+    private final int KEY_LENGTH = 2048;
     private Cipher cipher;
     private KeyPair keyPair;
 
@@ -35,12 +35,16 @@ public class AssymEncypt {
         keyPair = keyGen.generateKeyPair();
         if (privateKey == null) {
             privateKey = keyPair.getPrivate();
-            selfPrivateKey = privateKey;
+            System.out.println("Generated private key");
+            System.out.println(privateKey.getEncoded());
         }
+        selfPrivateKey = privateKey;
         if (publicKey == null) {
             publicKey = keyPair.getPublic();
-            selfPublicKey = publicKey;
+            System.out.println("Generated public key");
+            System.out.println(publicKey.getEncoded());
         }
+        selfPublicKey = publicKey;
         cipher = Cipher.getInstance(ENCRYPTION_TYPE);
     }
 
@@ -67,6 +71,7 @@ public class AssymEncypt {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(Base64.decodeBase64(sentPublicKey.getBytes()));
         KeyFactory keyFactory = KeyFactory.getInstance(ENCRYPTION_TYPE);
         friendKey = keyFactory.generatePublic(spec);
+        System.out.println("Generated friend key: " + friendKey.toString());
     }
 
 

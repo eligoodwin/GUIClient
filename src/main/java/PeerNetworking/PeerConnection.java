@@ -90,7 +90,7 @@ public class PeerConnection {
         this.localPort = Integer.parseInt(user.peerServerPort);
         this.peerPort = Integer.parseInt(friend.peerServerPort);
         try {
-            this.encypt = new AssymEncypt();
+            this.encypt = AssymEncypt.getAssymEncypt();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             System.exit(1);
@@ -117,7 +117,7 @@ public class PeerConnection {
         }
         this.localPort = Integer.parseInt(user.peerServerPort);
         try {
-            this.encypt = new AssymEncypt();
+            this.encypt = AssymEncypt.getAssymEncypt();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             System.exit(1);
@@ -170,12 +170,16 @@ public class PeerConnection {
                 System.out.println("Attempting connection, ip:port " + peerIP + ":" + peerPort);
                 connectionClient.connect(new InetSocketAddress(peerIP, peerPort), 15 * 1000);
                 //TODO: share keys and verify tokens
-                String initialMessage = "\"key\": \""+ encypt.getPublicKeyString() + "\", " +
-                        "\"token\" : \"" + token +"\"";
+                String initialMessage = "{\"key\": \""+ encypt.getPublicKeyString() + "\", " +
+                        "\"token\" : \"" + token +"\"}";
                 sendMessageNoCrypt(initialMessage);
 
                 //get message
-                String receivedMessage = getMessage();
+                String receivedMessage;
+                do {
+                    receivedMessage = getMessage();
+                }while (receivedMessage == null);
+                System.out.println("Received: " + receivedMessage);
                 jsonHelper.parseBody(receivedMessage);
                 String friendPublicKey = jsonHelper.getValueFromKey("key");
                 //make public key
@@ -260,10 +264,9 @@ public class PeerConnection {
                     if(friend.friend_name.equals("jadenBot")){
                         parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
                     }
-                    else {
+                    else if (msg != null){
                         ChatMessage message = gson.fromJson(msg, ChatMessage.class);
                         try {
-                            System.out.println(message.message);
                             String decrpytedMessage = encypt.decryptString(message.message);
                             System.out.println(decrpytedMessage);
                             parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(decrpytedMessage));
@@ -299,13 +302,11 @@ public class PeerConnection {
 
     public int sendMessageNoCrypt(String msg){
         if (connectionClient == null) return 1;
-        ChatMessage message = new ChatMessage(token, msg);
-        String json = gson.toJson(message);
-        System.out.println(json);
+        System.out.println(msg);
         try {
             PrintWriter out =
                     new PrintWriter(connectionClient.getOutputStream(), true);
-            out.println(json);
+            out.println(msg);
         }
         catch(IOException e){
             e.printStackTrace();
