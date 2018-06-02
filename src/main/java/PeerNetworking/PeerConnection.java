@@ -176,9 +176,11 @@ public class PeerConnection {
 
                 //get message
                 String receivedMessage;
+                //TODO: test if I still need this
+                int receiveCount = 0;
                 do {
                     receivedMessage = getMessage();
-                }while (receivedMessage == null);
+                }while (receivedMessage == null && receiveCount < 5);
                 System.out.println("Received: " + receivedMessage);
                 jsonHelper.parseBody(receivedMessage);
                 String friendPublicKey = jsonHelper.getValueFromKey("key");

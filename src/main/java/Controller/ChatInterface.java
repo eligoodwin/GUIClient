@@ -36,18 +36,10 @@ public class ChatInterface {
         this.friend = friend;
         this.request  = request;
         this.port = port;
-        try {
-            peer = new PeerConnection(user, request);
-
-        }
-        catch(IOException e){
-            e.printStackTrace();
-        }
         StartupThread startup = new StartupThread(this);
         startupThread = new Thread(startup);
         startupThread.setDaemon(true);
         startupThread.start();
-        //TODO: this needs to be after window is fully loaded to work
     }
 
     private void beginReceiving(){
@@ -61,7 +53,7 @@ public class ChatInterface {
         @Override
         public void run(){
             //attempt connection
-            int status = parentWindow.attemptConnection(request);
+            int status = attemptConnection(request);
             System.out.println("attemptConnection status: " + status);
             //while not loaded, wait
             //handle connection results
@@ -76,27 +68,29 @@ public class ChatInterface {
         public StartupThread(ChatInterface window){
             parentWindow = window;
         }
+
+        private int attemptConnection(ChatRequest req){
+            try {
+                peer = new PeerConnection(user, req);
+                int status = peer.connectNatPunch(port);
+                //TODO: handle different status
+                if (status != 0) peer = null;
+            }
+            catch(IOException e){
+                e.printStackTrace();
+                peer = null;
+            }
+            //Connection success
+            if (peer != null){
+                return 0;
+            }
+            return 1;
+        }
     }
 
-    private int attemptConnection(ChatRequest req){
-        try {
-            peer = new PeerConnection(user, req);
-            int status = peer.connectNatPunch(port);
-            //TODO: handle different status
-            if (status != 0) peer = null;
-        }
-        catch(IOException e){
-            e.printStackTrace();
-            peer = null;
-        }
-        //Connection success
-        if (peer != null){
-            return 0;
-        }
-        return 1;
-    }
 
-    void setPeerTester(PeerConnection peer){
+
+    void setPeer(PeerConnection peer){
         this.peer = peer;
         peer.setParentWindow(this);
     }
