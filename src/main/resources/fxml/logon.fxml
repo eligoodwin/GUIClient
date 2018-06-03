@@ -47,4 +47,11 @@
             GridPane.columnIndex="1"
     />
 
+    <Text fx:id="errorText"
+          text=""
+          GridPane.rowIndex="5"
+          GridPane.columnIndex="1"
+          GridPane.halignment="LEFT"
+    />
+
 </GridPane>

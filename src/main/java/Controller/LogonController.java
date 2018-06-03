@@ -11,6 +11,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -22,6 +23,8 @@ public class LogonController {
     private TextField logonUsername;
     @FXML
     private PasswordField logonPassword;
+    @FXML
+    private Text errorText;
 
     public void gotoNextPage(ActionEvent actionEvent) throws Exception {
         System.out.println("Logon controller clicked");

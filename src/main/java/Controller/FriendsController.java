@@ -25,7 +25,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
-import sun.awt.Mutex;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -36,6 +35,8 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 //Source for ListView: https://www.youtube.com/watch?v=9uubyM6oHAY
 public class FriendsController{
@@ -44,7 +45,7 @@ public class FriendsController{
     private static final long MAX_REQUEST_DIFF = 15000;
     private boolean acceptConnection = false;
     private boolean handlingRequest = false;
-    private Mutex friendMutex = new Mutex();
+    private Lock friendLock = new ReentrantLock();
     private OkClient client = null;
     private UserData user = null;
     private ArrayList<ChatRequest> chatRequests = new ArrayList<>();
@@ -103,7 +104,7 @@ public class FriendsController{
                     return;
                 }
                 int friendStatus = Integer.parseInt(friend.requestStatus);
-                friendMutex.lock();
+                friendLock.lock();
                 if(friendStatus == 0){
                     this.setItem(null);
                     //friendsList.getItems().remove(friend);
@@ -139,44 +140,44 @@ public class FriendsController{
                     //friendsList.refresh();
                     System.out.println("Request status: " + friend.requestStatus);
                 }
-                friendMutex.unlock();
+                friendLock.unlock();
             }
         }//end update
     }
 
     private synchronized FriendData findFriend(String friendName){
-        friendMutex.lock();
+        friendLock.lock();
         if (fList.size() < 1){
-            friendMutex.unlock();
+            friendLock.unlock();
             return null;
         }
         for (int i = 0; i < fList.size(); i++){
             FriendData temp = fList.get(i);
             if (temp.friend_name.equals(friendName)){
-                friendMutex.unlock();
+                friendLock.unlock();
                 return temp;
             }
         }
-        friendMutex.unlock();
+        friendLock.unlock();
         //not found
         return null;
     }
 
     int findFriendIndex(FriendData friend){
-        friendMutex.lock();
+        friendLock.lock();
         if (fList.size() < 1){
-            friendMutex.unlock();
+            friendLock.unlock();
             return -1;
         }
         for (int i = 0; i < fList.size(); i++){
             FriendData temp = fList.get(i);
             if (temp.friendID == friend.friendID && temp.friend_name.equals(friend.friend_name)){
-                friendMutex.unlock();
+                friendLock.unlock();
                 return i;
             }
         }
         //not found
-        friendMutex.unlock();
+        friendLock.unlock();
         return -1;
     }
 
@@ -187,7 +188,7 @@ public class FriendsController{
 
     synchronized int updateFriendsList(){
         if (getUser() == null) return -1;
-        friendMutex.lock();
+        friendLock.lock();
         if (fList.size() != 0) fList.clear();
         if (friendsList != null) friendsList.getItems().clear();
         if (friends != null) friends.clear();
@@ -213,7 +214,7 @@ public class FriendsController{
             });
             friendsList.refresh();
         }
-        friendMutex.unlock();
+        friendLock.unlock();
         return 0;
     }
 
@@ -307,13 +308,13 @@ public class FriendsController{
             return;
         }
         setHandlingRequest(true);
-        friendMutex.lock();
+        friendLock.lock();
         //get selected friend from listview
         FriendData friend = friendsList.getSelectionModel().getSelectedItem();
         //check if friend is accepted
         if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) {
             setHandlingRequest(false);
-            friendMutex.unlock();
+            friendLock.unlock();
             return;
         }
         //TODO: popup window letting person know you can't connect to people that aren't friends
@@ -324,13 +325,13 @@ public class FriendsController{
         }
         catch(IOException e){
             e.printStackTrace();
-            friendMutex.unlock();
+            friendLock.unlock();
             setHandlingRequest(false);
             return;
             //TODO: popup error message
         }
         //openChatWindow will setHandlingRequest(false)
-        friendMutex.unlock();
+        friendLock.unlock();
         openChatWindow(req);
     }
 
