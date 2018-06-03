@@ -267,6 +267,7 @@ public class PeerConnection {
                         parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
                     }
                     else if (msg != null){
+                        System.out.println("Received: " + msg);
                         ChatMessage message = gson.fromJson(msg, ChatMessage.class);
                         try {
                             String decrpytedMessage = encypt.decryptString(message.message);

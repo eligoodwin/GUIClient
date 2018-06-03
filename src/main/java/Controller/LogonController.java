@@ -29,7 +29,8 @@ public class LogonController {
     public void gotoNextPage(ActionEvent actionEvent) throws Exception {
         System.out.println("Logon controller clicked");
         //logon
-        if(attemptLogon()){
+        int status = attemptLogon();
+        if(status == 0){
             //get ip info into stun server
 
             Node source = (Node) actionEvent.getSource();
@@ -41,26 +42,26 @@ public class LogonController {
             Scene friendsScene = new Scene(root);
             theStage.setScene(friendsScene);
         }
+        else if (status == 1){
+            errorText.setText("Bad credentials");
+        }
         else{
-            //display red text warning bad credentials
-            System.out.println("bad creds");
+            errorText.setText("Error with connection");
         }
     }
 
     //used to attemptLogon the user
-    private boolean attemptLogon(){
+    private int attemptLogon(){
         final int VALID_HTTP = 0;
         user = new UserData();
         user.username = logonUsername.getText();
         user.password = logonPassword.getText();
         try {
             int httpStatus = client.logon(user);
-            if(VALID_HTTP == httpStatus ){
-                return true;
-            }
+            return httpStatus;
         } catch (IOException e) {
             System.out.println("Could not connect to attemptLogon route");
         }
-        return false;
+        return -1;
     }
 }

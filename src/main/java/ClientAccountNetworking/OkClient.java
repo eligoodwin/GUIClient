@@ -57,12 +57,12 @@ public class OkClient {
                 user.id = Long.parseLong(resObj.message.get("id").toString());
                 return 0;
             }
-            else {
-                System.out.println("Bad response in logon");
-                //TODO: retry route
+            String resMsg = resObj.message.get("response").getAsString();
+            if (resMsg.equals("bad credentials")){
+                return 1;
             }
         }
-        return 1;
+        return -1;
     }
 
     public int addUser(UserData user) throws IOException {
