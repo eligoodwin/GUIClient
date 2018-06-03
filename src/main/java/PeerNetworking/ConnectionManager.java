@@ -96,6 +96,9 @@ public class ConnectionManager {
                 try {
                     System.out.println("Connected to STUN on port: " + nextPort);
                     res = getMessage();
+                    //parse message
+
+
                 }
                 catch(SocketTimeoutException e){
                     e.printStackTrace();

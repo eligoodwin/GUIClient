@@ -19,17 +19,6 @@ public class STUNRegistration {
         username = user.username;
         token = user.token;
         this.port = port;
-        try {
-            localIPaddress = findLocalIPAddress();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-            localIPaddress = null;
-            System.out.println("Could not determine local address");
-        }
-    }
-
-    private String findLocalIPAddress() throws UnknownHostException {
-        InetAddress localhost = InetAddress.getLocalHost();
-        return localhost.getHostAddress().trim();
+        localIPaddress = user.privateIPaddress;
     }
 }

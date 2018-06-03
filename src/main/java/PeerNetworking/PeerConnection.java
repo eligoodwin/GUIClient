@@ -112,7 +112,8 @@ public class PeerConnection {
         }
         //We sent the request
         else{
-            this.peerIP = request.targetIP;
+            this.peerIP = request.targetIP.equals(user.ipAddress) ?
+                    user.privateIPaddress : request.targetIP;
             this.peerPort = Integer.parseInt(req.targetPort);
         }
         this.localPort = Integer.parseInt(user.peerServerPort);
