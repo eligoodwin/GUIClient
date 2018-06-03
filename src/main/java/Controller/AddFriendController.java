@@ -24,9 +24,16 @@ public class AddFriendController {
     private Text addFriendMsg;
     @FXML
     private Button addFriendSubmit;
+    @FXML
+    private Button cancelAddFriend;
 
     public void initData(UserData usr){
         user = usr;
+    }
+
+    public void cancelRequest(){
+        Stage stage = (Stage) cancelAddFriend.getScene().getWindow();
+        stage.close();
     }
 
     public void submitRequest(){
