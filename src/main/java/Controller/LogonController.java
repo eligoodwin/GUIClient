@@ -64,4 +64,14 @@ public class LogonController {
         }
         return -1;
     }
+
+    public void loadSplash(ActionEvent actionEvent) throws IOException{
+        Node source = (Node) actionEvent.getSource();
+        Stage theStage = (Stage) source.getScene().getWindow();
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/splash.fxml"));
+        Parent root = loader.<Parent>load();
+        SplashController controller = loader.<SplashController>getController();
+        Scene splashScene = new Scene(root);
+        theStage.setScene(splashScene);
+    }
 }

@@ -1,57 +1,41 @@
-<?import javafx.scene.layout.GridPane?>
+<?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.text.Text?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.PasswordField?>
-<GridPane
-        maxHeight="200" maxWidth="400" prefHeight="200" prefWidth="400"
-        fx:controller="Controller.LogonController"
-          xmlns:fx="http://javafx.com/fxml" alignment="center" hgap="10" vgap="10">
-    <Text text="Logon"
-          GridPane.rowIndex="0"
-          GridPane.columnIndex="0"
-          GridPane.columnSpan="2"
-          GridPane.rowSpan="1"
-          GridPane.halignment="CENTER"
-    />
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.text.Text?>
 
-    <Label text="Username:"
-           GridPane.columnIndex="0"
-           GridPane.rowIndex="1"
-    />
+<GridPane alignment="center" hgap="10" maxHeight="200" maxWidth="400" prefHeight="200" prefWidth="400" vgap="10" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8.0.121" fx:controller="Controller.LogonController">
+    <Text text="Logon" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="0" GridPane.rowSpan="1" />
+
+    <Label text="Username:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
 
 
-    <TextField fx:id="logonUsername"
-               GridPane.rowIndex="1"
-               GridPane.columnIndex="1"
-    />
+    <TextField fx:id="logonUsername" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-    <Label text="Password:"
-           GridPane.columnIndex="0"
-           GridPane.rowIndex="2"
-    />
+    <Label text="Password:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
 
-    <PasswordField
-            fx:id="logonPassword"
-            GridPane.columnIndex="1"
-            GridPane.rowIndex="2"
-    />
+    <PasswordField fx:id="logonPassword" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-    <Button text="Sign in"
-            defaultButton="true"
-            onAction="#gotoNextPage"
-            GridPane.rowIndex="3"
-            GridPane.rowSpan="2"
-            GridPane.columnIndex="1"
-    />
+    <Button defaultButton="true" onAction="#gotoNextPage" text="Sign in" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.rowSpan="2" />
 
-    <Text fx:id="errorText"
-          text=""
-          GridPane.rowIndex="5"
-          GridPane.columnIndex="1"
-          GridPane.halignment="LEFT"
-    />
+    <Text fx:id="errorText" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="5" />
+   <Button fx:id="cancelLogon" onAction="#loadSplash" mnemonicParsing="false" text="Cancel" GridPane.rowIndex="3" GridPane.rowSpan="2" GridPane.columnIndex="0"/>
+   <columnConstraints>
+      <ColumnConstraints />
+      <ColumnConstraints />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints />
+      <RowConstraints />
+      <RowConstraints />
+      <RowConstraints />
+      <RowConstraints />
+      <RowConstraints />
+   </rowConstraints>
 
 </GridPane>
