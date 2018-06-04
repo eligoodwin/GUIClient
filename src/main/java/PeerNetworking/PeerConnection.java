@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.io.*;
 import java.net.*;
 import java.security.InvalidKeyException;
@@ -104,18 +105,23 @@ public class PeerConnection {
         if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
         this.user = usr;
         this.request = req;
-        System.out.println("Test " + request.targetUser);
+        System.out.println("Making peer connection " + request.targetUser);
+        System.out.printf("HERE NOW\n");
+        System.out.printf("this peer ip : %s", this.peerIP);
         //Friend sent the request
 //        System.out.printf("target IP: %s user IP: %s\n", friend.ipAddress, user.ipAddress);
         if (request.targetUser.equals(user.username)){
             this.peerIP = request.requestingIPaddress;
             this.peerIP = request.requestingIPaddress.equals(user.ipAddress) ? user.privateIPaddress : request.requestingLocalIPaddress;
+
 //            this.peerPort = Integer.parseInt(request.requestingPort);
         }
         //We sent the request
         else{
             this.peerIP = request.targetIP.equals(user.ipAddress) ? user.privateIPaddress : request.targetIP;
 //            this.peerIP = request.targetIP;
+            System.out.printf("HERE NOW\n");
+            System.out.printf("this peer ip : %s", this.peerIP);
             this.peerPort = Integer.parseInt(req.targetPort);
         }
         this.localPort = Integer.parseInt(user.peerServerPort);

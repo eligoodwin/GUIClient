@@ -112,14 +112,14 @@ public class FriendsController{
                 }
                 //pending
                 else if (friendStatus == 1) {
-                    System.out.println("Found friend with status 1");
+                    //System.out.println("Found friend with status 1");
                     this.setContextMenu(pendingMenu);
                     this.textProperty().bind(Bindings.format("Request from %s", friend.friend_name));
                     this.setStyle("-fx-font-style: italic");
                 }
                 //accepted friend
                 else if (friendStatus == 2) {
-                    System.out.println("Found friend with status 2");
+                    //System.out.println("Found friend with status 2");
                     if (friend.friend_name.equals("jadenBot")){
                         this.setContextMenu(null);
                     }
@@ -135,7 +135,7 @@ public class FriendsController{
                     int index = findFriendIndex(friend);
                     if (index >= 0) fList.remove(index);
                     //friendsList.refresh();
-                    System.out.println("Request status: " + friend.requestStatus);
+                    //System.out.println("Request status: " + friend.requestStatus);
                 }
             }
         }//end update
@@ -263,7 +263,7 @@ public class FriendsController{
         catch(IOException e){
             e.printStackTrace();
         }
-        System.out.println("Accepted: " + friend.friend_name);
+        //System.out.println("Accepted: " + friend.friend_name);
     }
 
     private void rejectFriend(FriendData friend){
@@ -277,14 +277,14 @@ public class FriendsController{
         catch(IOException e){
             e.printStackTrace();
         }
-        System.out.println("Rejected: " + friend.friend_name);
+        //System.out.println("Rejected: " + friend.friend_name);
     }
 
     private void blockFriend(FriendData friend){
         try {
             int check = client.blockFriend(getUser(), friend.friend_name);
             if (check == 0) {
-                System.out.println("Blocked: " + friend.friend_name);
+                //System.out.println("Blocked: " + friend.friend_name);
                 updateFriendsList();
             }
             else{
@@ -298,7 +298,7 @@ public class FriendsController{
 
     public void requestChat(ActionEvent actionEvent){
         if(getHandlingRequest()){
-            System.out.println("Handle existing chat requests before making a new one.");
+            //System.out.println("Handle existing chat requests before making a new one.");
             return;
         }
         setHandlingRequest(true);
@@ -346,7 +346,7 @@ public class FriendsController{
     }
 
     public synchronized void setUser(UserData usr){
-        System.out.println("Trace: setUser called");
+        //System.out.println("Trace: setUser called");
         user = usr;
     }
 
@@ -385,7 +385,7 @@ public class FriendsController{
     private int getUserRequestInput(ChatRequest req){
         //TODO: This may be its own thread eventually
         //TODO: set connection status?
-        System.out.println("Trace connect to request");
+        //System.out.println("Trace connect to request");
         Parent root;
         try{
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/acceptConnection.fxml"));
@@ -480,10 +480,10 @@ public class FriendsController{
             Parent root = loader.<Parent>load();
             ChatInterface controller = loader.<ChatInterface>getController();
             FriendData friend = findFriendFromRequest(req);
-            System.out.println("In openChatWindow before startConnection");
+            //System.out.println("In openChatWindow before startConnection");
             System.out.flush();
             controller.startConnection(user, friend, req, nextPort);
-            System.out.println("In openChatWindow after startConnection");
+            //System.out.println("In openChatWindow after startConnection");
             System.out.flush();
             Scene chatScene = new Scene(root);
             theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
@@ -491,16 +491,16 @@ public class FriendsController{
                     controller.endConnection();
                 }
             });
-            System.out.println("Before friend name");
+            //System.out.println("Before friend name");
             String title = "Chat";
             if (friend.friend_name != null) {
                 title = "Chatting with " + friend.friend_name;
             }
-            System.out.println("After friend name");
+            //System.out.println("After friend name");
             System.out.flush();
             theStage.setTitle(title);;
             theStage.setScene(chatScene);
-            System.out.println("Showing chat window");
+            //System.out.println("Showing chat window");
             theStage.show();
             nextPort = manager.getNextSocket();
             acceptedRequest = null;
@@ -580,7 +580,7 @@ public class FriendsController{
                     break;
                 }
         } //while running
-        System.out.println("Exitted checking for chat requests");
+        //System.out.println("Exitted checking for chat requests");
         //Tell the main JavaFX thread to call the attemptConnection function
     }
 }

@@ -2,6 +2,7 @@ package PeerNetworking;
 
 import QueryObjects.STUNRegistration;
 import QueryObjects.UserData;
+import Util.JSONhelper;
 import com.google.gson.Gson;
 
 import java.io.*;
@@ -92,12 +93,13 @@ public class ConnectionManager {
                 String json = gson.toJson(validation);
                 System.out.println(json);
                 sendMessage(json);
-                String res = "";
+
                 try {
-                    System.out.println("Connected to STUN on port: " + nextPort);
-                    res = getMessage();
-                    //parse message
-                    user.ipAddress = res;
+                    String response = getMessage();
+                    JSONhelper jHelper = new JSONhelper();
+                    jHelper.parseBody(response);
+                    String potentialIP = jHelper.getValueFromKey("message");
+                    System.out.printf("IP FROM STUN: %s\n", potentialIP);
 
                 }
                 catch(SocketTimeoutException e){
@@ -107,7 +109,7 @@ public class ConnectionManager {
                     throw new SocketException();
                 }
                 nextSocket.close();
-                System.out.println("Good STUN Response:" + res);
+
                 return;
             }
             catch(IOException e){
