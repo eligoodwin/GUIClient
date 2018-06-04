@@ -109,13 +109,12 @@ public class PeerConnection {
 
         if (request.targetUser.equals(user.username)){
             this.peerIP = request.requestingIPaddress;
+            this.peerPort = Integer.parseInt(request.requestingPort);
         }
         //We sent the request
         else{
 
             this.peerIP = request.targetIP;
-            System.out.printf("HERE NOW\n");
-            System.out.printf("this peer ip : %s", this.peerIP);
             this.peerPort = Integer.parseInt(req.targetPort);
         }
         this.localPort = Integer.parseInt(user.peerServerPort);
