@@ -297,18 +297,29 @@ public class FriendsController{
     }
 
     public void requestChat(ActionEvent actionEvent){
+        friendLock.lock();
         if(getHandlingRequest()){
             System.out.println("Handle existing chat requests before making a new one.");
             return;
         }
         setHandlingRequest(true);
         //get selected friend from listview
-        FriendData friend = friendsList.getSelectionModel().getSelectedItem();
-        //check if friend is accepted
-        if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) {
+        FriendData friend = null;
+        try {
+            friend = friendsList.getSelectionModel().getSelectedItem();
+            //check if friend is accepted
+            if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) {
+                setHandlingRequest(false);
+                friendLock.unlock();
+                return;
+            }
+        }
+        catch(NullPointerException e){
             setHandlingRequest(false);
+            friendLock.unlock();
             return;
         }
+        friendLock.unlock();
         //TODO: popup window letting person know you can't connect to people that aren't friends
 
         ChatRequest req;

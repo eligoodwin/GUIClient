@@ -7,6 +7,9 @@ import QueryObjects.ChatRequest;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
 import Util.JSONhelper;
+import com.google.common.util.concurrent.SimpleTimeLimiter;
+import com.google.common.util.concurrent.TimeLimiter;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.gson.Gson;
 
 import javax.crypto.BadPaddingException;
@@ -17,6 +20,7 @@ import java.net.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class PeerConnection {
@@ -250,25 +254,37 @@ public class PeerConnection {
             //TODO: this is probably not a good hack - prevents trying to send
             //  messages to windows that don't yet exist
             Thread.sleep(1000);
-            parentWindow.sendMessageToWindow("Starting reception\n");
+            parentWindow.sendMessageToWindow("#Starting reception\n\n");
         }
         catch(InterruptedException e){
             e.printStackTrace();
         }
         try {
             BufferedReader input = getBuffer(connectionClient);
+            TimeLimiter timeLimiter = new SimpleTimeLimiter();
             while(getRunning()){
                 //TODO: check for ending connection
                 String msg = null;
                 if(!connectionClient.isConnected()){
                     setRunning(false);
                     //TODO: call something in parentWindow to let user know friend disconnected
-                    parentWindow.sendMessageToWindow("Friend disconnected");
+                    parentWindow.sendMessageToWindow("\n#Friend disconnected");
                 }
                 else {
-                    msg = input.readLine();
+                    //source: https://stackoverflow.com/questions/6792835/how-do-you-set-a-timeout-on-bufferedreader-and-printwriter-in-java-1-4
+                    //call readline with timeout
+                    try {
+                        msg = timeLimiter.callWithTimeout(input::readLine, 5, TimeUnit.SECONDS, true);
+                    }
+                    catch (TimeoutException | UncheckedTimeoutException e){
+                        msg = null;
+                    }
+                    catch(Exception e){
+                        e.printStackTrace();
+                        msg = null;
+                    }
                     if (parentWindow != null) {
-                        if (friend.friend_name.equals("jadenBot")) {
+                        if (friend.friend_name.equals("jadenBot") && msg != null) {
                             parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
                         } else if (msg != null) {
                             System.out.println("Received: " + msg);
