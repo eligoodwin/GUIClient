@@ -32,13 +32,12 @@ public class PeerConnection {
     private ChatRequest request = null;
     private boolean running = true;
     private Socket connectionClient = null;
-    private ServerSocket listener = null;
+    private ServerSocket sock = null;
     private Thread incomingThread = null;
     private Thread testServer;
     private String peerIP;
     private ChatInterface parentWindow = null;
     private AssymEncypt encypt;
-    private boolean sameNAT;
 
     public synchronized UserData getUser(){return user;}
 
@@ -64,6 +63,24 @@ public class PeerConnection {
         connectionClient = connection;
     }
 
+    private void startServer(){
+        if (sock == null) return;
+        try {
+            connectionClient = sock.accept();
+            incomingThread = new Thread(this::startReceiving);
+            incomingThread.setDaemon(true);
+            incomingThread.start();
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
+        try {
+            sock.close();
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
+    }
 
     public PeerConnection(UserData usr, FriendData frnd) throws IOException {
         if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
@@ -89,8 +106,7 @@ public class PeerConnection {
         this.request = req;
         System.out.println("Test " + request.targetUser);
         //Friend sent the request
-
-
+//        System.out.printf("target IP: %s user IP: %s\n", friend.ipAddress, user.ipAddress);
         if (request.targetUser.equals(user.username)){
             this.peerIP = request.requestingIPaddress;
 //            this.peerIP = request.requestingIPaddress.equals(user.ipAddress) ? user.privateIPaddress : request.requestingLocalIPaddress;
@@ -100,11 +116,8 @@ public class PeerConnection {
         else{
 //            this.peerIP = request.targetIP.equals(user.ipAddress) ? user.privateIPaddress : request.targetIP;
             this.peerIP = request.targetIP;
-
             this.peerPort = Integer.parseInt(req.targetPort);
         }
-
-        System.out.printf("Attempting connection on: %s\n", peerIP);
         this.localPort = Integer.parseInt(user.peerServerPort);
         try {
             this.encypt = AssymEncypt.getAssymEncypt();
@@ -118,36 +131,33 @@ public class PeerConnection {
 
     }
 
-    public int connectBehindNat(int port){
-        JSONhelper jsonHelper = new JSONhelper();
-        try {
-            listener = new ServerSocket();
-            connectionClient.setReuseAddress(true);
-            listener.bind(new InetSocketAddress(port));
-            connectionClient = listener.accept();
-            String initialMessage = "{\"key\": \""+ encypt.getPublicKeyString() + "\", " +
-                    "\"token\" : \"" + token +"\"}";
-            sendMessageNoCrypt(initialMessage);
-            String receivedMessage;
-            int receiveCount = 0;
-            do {
-                receivedMessage = getMessage();
-            }while (receivedMessage == null && receiveCount < 5);
-            System.out.println("Received: " + receivedMessage);
-            jsonHelper.parseBody(receivedMessage);
-            String friendPublicKey = jsonHelper.getValueFromKey("key");
-            //make public key
-            encypt.setFriendPublicKey(friendPublicKey);
-            //System.out.println(getMessage());
-            System.out.println(receivedMessage);
-            System.out.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+    //This is used only for debugging on local networks
+    public PeerConnection(int test){
+        user = new UserData();
+        localTestPort = test;
+        sock = null;
+        if (localTestPort > 65535) return;
+        while (true) {
+            try {
+                sock = new ServerSocket(localTestPort);
+                break;
+            }
+            catch(IOException e){
+                localTestPort++;
+            }
         }
+        //set local IP and port
+        InetAddress ip;
+        try{
+            ip = InetAddress.getLocalHost();
+            setIPandPort(ip.getHostAddress(), localTestPort);
+        }
+        catch(UnknownHostException e){
+            e.printStackTrace();
+            setIPandPort("127.0.0.1", 9000);
+        }
+        testServer = new Thread(this::startServer);
+        testServer.start();
     }
 
     public int connectNatPunch(int port){
@@ -249,32 +259,34 @@ public class PeerConnection {
             BufferedReader input = getBuffer(connectionClient);
             while(getRunning()){
                 //TODO: check for ending connection
-                String msg = input.readLine();
+                String msg = null;
                 if(!connectionClient.isConnected()){
                     setRunning(false);
                     //TODO: call something in parentWindow to let user know friend disconnected
                     parentWindow.sendMessageToWindow("Friend disconnected");
                 }
-                else if (parentWindow != null) {
-                    if(friend.friend_name.equals("jadenBot")){
-                        parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
-                    }
-                    else if (msg != null){
-                        System.out.println("Received: " + msg);
-                        ChatMessage message = gson.fromJson(msg, ChatMessage.class);
-                        try {
-                            String decrpytedMessage = encypt.decryptString(message.message);
-                            System.out.println(decrpytedMessage);
-                            parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(decrpytedMessage));
-                        } catch (InvalidKeyException e) {
-                            e.printStackTrace();
-                        } catch (BadPaddingException e) {
-                            e.printStackTrace();
-                        } catch (IllegalBlockSizeException e) {
-                            e.printStackTrace();
-                        }
-                    }//else - not jaden
-                } //else if client is connected && parent not null
+                else {
+                    msg = input.readLine();
+                    if (parentWindow != null) {
+                        if (friend.friend_name.equals("jadenBot")) {
+                            parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
+                        } else if (msg != null) {
+                            System.out.println("Received: " + msg);
+                            ChatMessage message = gson.fromJson(msg, ChatMessage.class);
+                            try {
+                                String decrpytedMessage = encypt.decryptString(message.message);
+                                System.out.println(decrpytedMessage);
+                                parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(decrpytedMessage));
+                            } catch (InvalidKeyException e) {
+                                e.printStackTrace();
+                            } catch (BadPaddingException e) {
+                                e.printStackTrace();
+                            } catch (IllegalBlockSizeException e) {
+                                e.printStackTrace();
+                            }
+                        }//else - not jaden
+                    } //parent not null
+                }//client is connected
             } //while running
         }//try
         catch(IOException e){

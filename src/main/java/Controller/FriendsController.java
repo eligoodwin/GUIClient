@@ -14,13 +14,9 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.MenuItem;
+import javafx.scene.control.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
@@ -30,11 +26,10 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -56,6 +51,9 @@ public class FriendsController{
     private ChatRequest acceptedRequest = null;
     private ConnectionManager manager = null;
     private int nextPort = 9000;
+
+    @FXML
+    ScrollPane friendContainer;
 
     @FXML
     ListView<FriendData> friendsList = null;
@@ -104,7 +102,6 @@ public class FriendsController{
                     return;
                 }
                 int friendStatus = Integer.parseInt(friend.requestStatus);
-                friendLock.lock();
                 if(friendStatus == 0){
                     this.setItem(null);
                     //friendsList.getItems().remove(friend);
@@ -140,44 +137,35 @@ public class FriendsController{
                     //friendsList.refresh();
                     System.out.println("Request status: " + friend.requestStatus);
                 }
-                friendLock.unlock();
             }
         }//end update
     }
 
     private synchronized FriendData findFriend(String friendName){
-        friendLock.lock();
         if (fList.size() < 1){
-            friendLock.unlock();
             return null;
         }
         for (int i = 0; i < fList.size(); i++){
             FriendData temp = fList.get(i);
             if (temp.friend_name.equals(friendName)){
-                friendLock.unlock();
                 return temp;
             }
         }
-        friendLock.unlock();
         //not found
         return null;
     }
 
     int findFriendIndex(FriendData friend){
-        friendLock.lock();
         if (fList.size() < 1){
-            friendLock.unlock();
             return -1;
         }
         for (int i = 0; i < fList.size(); i++){
             FriendData temp = fList.get(i);
             if (temp.friendID == friend.friendID && temp.friend_name.equals(friend.friend_name)){
-                friendLock.unlock();
                 return i;
             }
         }
         //not found
-        friendLock.unlock();
         return -1;
     }
 
@@ -187,18 +175,24 @@ public class FriendsController{
     }
 
     synchronized int updateFriendsList(){
+        try {
+            if (!friendLock.tryLock(500, TimeUnit.MILLISECONDS)){
+                return -1;
+            }
+        }
+        catch(InterruptedException e){
+            e.printStackTrace();
+            return -1;
+        }
         if (getUser() == null) return -1;
-        friendLock.lock();
         if (fList.size() != 0) fList.clear();
         if (friendsList != null) friendsList.getItems().clear();
         if (friends != null) friends.clear();
         try {
             String res = client.getFriends(getUser(), friends);
-            //TODO: handle res
         }
         catch(IOException e){
             e.printStackTrace();
-            //TODO: handle this
         }
         //source: https://stackoverflow.com/questions/20936101/get-listcell-via-listview
         if (friends.size() > 0){
@@ -308,13 +302,11 @@ public class FriendsController{
             return;
         }
         setHandlingRequest(true);
-        friendLock.lock();
         //get selected friend from listview
         FriendData friend = friendsList.getSelectionModel().getSelectedItem();
         //check if friend is accepted
         if (!friend.requestStatus.equals(FRIEND_ACCEPTED)) {
             setHandlingRequest(false);
-            friendLock.unlock();
             return;
         }
         //TODO: popup window letting person know you can't connect to people that aren't friends
@@ -325,13 +317,11 @@ public class FriendsController{
         }
         catch(IOException e){
             e.printStackTrace();
-            friendLock.unlock();
             setHandlingRequest(false);
             return;
             //TODO: popup error message
         }
         //openChatWindow will setHandlingRequest(false)
-        friendLock.unlock();
         openChatWindow(req);
     }
 
@@ -417,6 +407,7 @@ public class FriendsController{
         }
         if (acceptConnection){
             System.out.println("Connection accepted");
+            acceptConnection = false;
             return 1;}
         else{ System.out.println("Connection refused"); return 0;}
     }
@@ -479,6 +470,7 @@ public class FriendsController{
     }
 
     synchronized private int openChatWindow(ChatRequest req){
+        friendLock.lock();
         //Use current stage to hide friends window
         //Stage theStage = (Stage)friendsList.getScene().getWindow();
         //Use new stage to popup new window
@@ -488,25 +480,39 @@ public class FriendsController{
             Parent root = loader.<Parent>load();
             ChatInterface controller = loader.<ChatInterface>getController();
             FriendData friend = findFriendFromRequest(req);
+            System.out.println("In openChatWindow before startConnection");
+            System.out.flush();
             controller.startConnection(user, friend, req, nextPort);
+            System.out.println("In openChatWindow after startConnection");
+            System.out.flush();
             Scene chatScene = new Scene(root);
             theStage.setOnCloseRequest(new EventHandler<WindowEvent>(){
                 public void handle(WindowEvent we) {
                     controller.endConnection();
                 }
             });
-            String title = "Chatting with " + friend.friend_name;
+            System.out.println("Before friend name");
+            String title = "Chat";
+            if (friend.friend_name != null) {
+                title = "Chatting with " + friend.friend_name;
+            }
+            System.out.println("After friend name");
+            System.out.flush();
             theStage.setTitle(title);;
             theStage.setScene(chatScene);
+            System.out.println("Showing chat window");
             theStage.show();
             nextPort = manager.getNextSocket();
+            acceptedRequest = null;
         }
         catch(IOException e){
             e.printStackTrace();
             System.out.println("Exception in requestChat");
             setHandlingRequest(false);
+            friendLock.unlock();
             return 1;
         }
+        friendLock.unlock();
         setHandlingRequest(false);
         return 0;
     }

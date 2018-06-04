@@ -40,6 +40,7 @@ public class LogonController {
             FriendsController controller = loader.<FriendsController>getController();
             controller.initData(user);
             Scene friendsScene = new Scene(root);
+            theStage.setTitle("Friends");
             theStage.setScene(friendsScene);
         }
         else if (status == 1){

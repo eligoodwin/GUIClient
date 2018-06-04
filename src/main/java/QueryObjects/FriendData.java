@@ -6,6 +6,7 @@ public class FriendData {
     @SerializedName("friend name")
     public String friend_name = "";
     public String ipAddress = "127.0.0.1";
+    public String localIPAddress = "1.1.1.1";
     public String peerServerPort = "9000";
     public String requestDate = "";
     public String requestStatus = "";
