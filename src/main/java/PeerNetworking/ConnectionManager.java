@@ -35,11 +35,10 @@ public class ConnectionManager {
 
 
     private int generateRandomPort(){
-        final int MIN = 25000;
+        final int MIN = 20000;
         final int MAX = 65000;
         Random rand = new Random();
         return rand.nextInt((MAX - MIN)) + MIN;
-
     }
 
     private ConnectionManager(UserData usr){
@@ -55,9 +54,7 @@ public class ConnectionManager {
             e.printStackTrace();
             return -1;
         }
-        int temp = nextPort;
-        nextPort++; //increment to avoid conflicts
-        return temp;
+        return nextPort++;
     }
 
     private void getNewPort(){
