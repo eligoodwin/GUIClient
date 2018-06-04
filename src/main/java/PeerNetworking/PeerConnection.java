@@ -259,32 +259,34 @@ public class PeerConnection {
             BufferedReader input = getBuffer(connectionClient);
             while(getRunning()){
                 //TODO: check for ending connection
-                String msg = input.readLine();
+                String msg = null;
                 if(!connectionClient.isConnected()){
                     setRunning(false);
                     //TODO: call something in parentWindow to let user know friend disconnected
                     parentWindow.sendMessageToWindow("Friend disconnected");
                 }
-                else if (parentWindow != null) {
-                    if(friend.friend_name.equals("jadenBot")){
-                        parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
-                    }
-                    else if (msg != null){
-                        System.out.println("Received: " + msg);
-                        ChatMessage message = gson.fromJson(msg, ChatMessage.class);
-                        try {
-                            String decrpytedMessage = encypt.decryptString(message.message);
-                            System.out.println(decrpytedMessage);
-                            parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(decrpytedMessage));
-                        } catch (InvalidKeyException e) {
-                            e.printStackTrace();
-                        } catch (BadPaddingException e) {
-                            e.printStackTrace();
-                        } catch (IllegalBlockSizeException e) {
-                            e.printStackTrace();
-                        }
-                    }//else - not jaden
-                } //else if client is connected && parent not null
+                else {
+                    msg = input.readLine();
+                    if (parentWindow != null) {
+                        if (friend.friend_name.equals("jadenBot")) {
+                            parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
+                        } else if (msg != null) {
+                            System.out.println("Received: " + msg);
+                            ChatMessage message = gson.fromJson(msg, ChatMessage.class);
+                            try {
+                                String decrpytedMessage = encypt.decryptString(message.message);
+                                System.out.println(decrpytedMessage);
+                                parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(decrpytedMessage));
+                            } catch (InvalidKeyException e) {
+                                e.printStackTrace();
+                            } catch (BadPaddingException e) {
+                                e.printStackTrace();
+                            } catch (IllegalBlockSizeException e) {
+                                e.printStackTrace();
+                            }
+                        }//else - not jaden
+                    } //parent not null
+                }//client is connected
             } //while running
         }//try
         catch(IOException e){

@@ -75,6 +75,7 @@ public class ChatInterface {
             int status = attemptConnection(request);
             System.out.println("attemptConnection status: " + status);
             //while not loaded, wait
+            while(connectingText.getScene().getWindow() == null){}
             //handle connection results
             //TODO: handle closing window during thread
             //if connected:
