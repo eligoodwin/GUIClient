@@ -120,13 +120,7 @@ public class FriendsController{
                 }
                 //accepted friend
                 else if (friendStatus == 2) {
-
-                    if (friend.friend_name.equals("jadenBot")){
-                        this.setContextMenu(null);
-                    }
-                    else {
-                        this.setContextMenu(blockMenu);
-                    }
+                    this.setContextMenu(blockMenu);
                     this.textProperty().bind(Bindings.format("%s", friend.friend_name));
                     this.setStyle("-fx-font-style: normal");
                 }

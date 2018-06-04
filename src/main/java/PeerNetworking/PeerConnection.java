@@ -44,14 +44,6 @@ public class PeerConnection {
 
     public synchronized UserData getUser(){return user;}
 
-    private synchronized void setIPandPort(String ip, int port){
-        if (user == null){
-                user = new UserData();
-        }
-        user.ipAddress = ip;
-        user.peerServerPort = Integer.toString(port);
-    }
-
     private synchronized boolean getRunning(){ return running;}
 
     private synchronized void setRunning(boolean set){
@@ -61,47 +53,6 @@ public class PeerConnection {
     public void setParentWindow(ChatInterface window) { parentWindow = window;}
 
     public void setFriend(FriendData friend){this.friend = friend;}
-
-    private synchronized void setConnectionClient(Socket connection){
-        connectionClient = connection;
-    }
-
-    private void startServer(){
-        if (connectionListener == null) return;
-        try {
-            connectionClient = connectionListener.accept();
-            incomingThread = new Thread(this::startReceiving);
-            incomingThread.setDaemon(true);
-            incomingThread.start();
-        }
-        catch(IOException e){
-            e.printStackTrace();
-        }
-        try {
-            connectionListener.close();
-        }
-        catch(IOException e){
-            e.printStackTrace();
-        }
-    }
-
-//    public PeerConnection(UserData usr, FriendData frnd) throws IOException {
-//        if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
-//        this.user = usr;
-//        this.friend = frnd;
-//        this.peerIP = friend.ipAddress;
-//        this.localPort = Integer.parseInt(user.peerServerPort);
-//        this.peerPort = Integer.parseInt(friend.peerServerPort);
-//        try {
-//            this.encypt = AssymEncypt.getAssymEncypt();
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//            System.exit(1);
-//        } catch (NoSuchPaddingException e) {
-//            e.printStackTrace();
-//            System.exit(1);
-//        }
-//    }
 
     public PeerConnection(UserData usr, ChatRequest req) throws IOException {
         if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
@@ -136,35 +87,6 @@ public class PeerConnection {
             e.printStackTrace();
             System.exit(1);
         }
-    }
-
-    //This is used only for debugging on local networks
-    public PeerConnection(int test){
-        user = new UserData();
-        localTestPort = test;
-        connectionListener = null;
-        if (localTestPort > 65535) return;
-        while (true) {
-            try {
-                connectionListener = new ServerSocket(localTestPort);
-                break;
-            }
-            catch(IOException e){
-                localTestPort++;
-            }
-        }
-        //set local IP and port
-        InetAddress ip;
-        try{
-            ip = InetAddress.getLocalHost();
-            setIPandPort(ip.getHostAddress(), localTestPort);
-        }
-        catch(UnknownHostException e){
-            e.printStackTrace();
-            setIPandPort("127.0.0.1", 9000);
-        }
-        testServer = new Thread(this::startServer);
-        testServer.start();
     }
 
     public int connectNatPunch(int port){
@@ -207,9 +129,15 @@ public class PeerConnection {
                 do {
                     receivedMessage = getMessage();
                 }while (receivedMessage == null && receiveCount < 5);
-                System.out.println("Received: " + receivedMessage);
+                //System.out.println("Received: " + receivedMessage);
                 jsonHelper.parseBody(receivedMessage);
                 String friendPublicKey = jsonHelper.getValueFromKey("key");
+                String friendAPI = jsonHelper.getValueFromKey("token");
+                if (!friendAPI.equals(token)){
+                    System.out.println("API tokens do not match");
+                    connectionClient.close();
+                    return -1;
+                }
                 //make public key
                 encypt.setFriendPublicKey(friendPublicKey);
                 //System.out.println(getMessage());
