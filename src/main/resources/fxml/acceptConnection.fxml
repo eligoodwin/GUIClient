@@ -14,7 +14,7 @@
         <Button
                 fx:id="ignoreConnection"
                 onAction="#ignoreConnection"
-                layoutX="206.0"
+                layoutX="200.0"
                 layoutY="83.0"
                 mnemonicParsing="false"
                 text="Ignore" />
