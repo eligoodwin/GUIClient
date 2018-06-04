@@ -33,12 +33,14 @@ public class PeerConnection {
     private ChatRequest request = null;
     private boolean running = true;
     private Socket connectionClient = null;
-    private ServerSocket sock = null;
+    private ServerSocket connectionListener = null;
     private Thread incomingThread = null;
     private Thread testServer;
     private String peerIP;
     private ChatInterface parentWindow = null;
     private AssymEncypt encypt;
+
+    private boolean isServer;
 
     public synchronized UserData getUser(){return user;}
 
@@ -65,9 +67,9 @@ public class PeerConnection {
     }
 
     private void startServer(){
-        if (sock == null) return;
+        if (connectionListener == null) return;
         try {
-            connectionClient = sock.accept();
+            connectionClient = connectionListener.accept();
             incomingThread = new Thread(this::startReceiving);
             incomingThread.setDaemon(true);
             incomingThread.start();
@@ -76,7 +78,7 @@ public class PeerConnection {
             e.printStackTrace();
         }
         try {
-            sock.close();
+            connectionListener.close();
         }
         catch(IOException e){
             e.printStackTrace();
@@ -117,10 +119,10 @@ public class PeerConnection {
         }
         //We sent the request
         else{
-
             //this.peerIP = request.targetIP;
             this.peerIP = request.targetIP.equals(user.ipAddress) ? user.privateIPaddress : request.targetIP;
             this.peerPort = Integer.parseInt(req.targetPort);
+            this.isServer = true;
         }
         this.localPort = Integer.parseInt(user.peerServerPort);
         try {
@@ -132,18 +134,17 @@ public class PeerConnection {
             e.printStackTrace();
             System.exit(1);
         }
-
     }
 
     //This is used only for debugging on local networks
     public PeerConnection(int test){
         user = new UserData();
         localTestPort = test;
-        sock = null;
+        connectionListener = null;
         if (localTestPort > 65535) return;
         while (true) {
             try {
-                sock = new ServerSocket(localTestPort);
+                connectionListener = new ServerSocket(localTestPort);
                 break;
             }
             catch(IOException e){
@@ -170,12 +171,27 @@ public class PeerConnection {
         int attemptCount = 0;
         do {
             try {
-                connectionClient = new Socket();
-                connectionClient.setReuseAddress(true);
-                System.out.println("Connect Punch, binding port: " + localPort);
-                connectionClient.bind(new InetSocketAddress(localPort));
-                System.out.println("Attempting connection, ip:port " + peerIP + ":" + peerPort);
-                connectionClient.connect(new InetSocketAddress(peerIP, peerPort), 15 * 1000);
+                if(isServer){
+                    /*
+                    *   creating server socket in case the user is server. This only occurs when
+                    *   both users are behind the same nat. The requesting user is then turned
+                    *   into a server that the other peer connects to.
+                    * */
+
+                    connectionListener = new ServerSocket();
+                    connectionListener.setReuseAddress(true);
+                    connectionListener.bind(new InetSocketAddress(localPort));
+                    connectionClient = connectionListener.accept();
+                }
+                else{
+                    connectionClient = new Socket();
+                    connectionClient.setReuseAddress(true);
+                    System.out.println("Connect Punch, binding port: " + localPort);
+                    connectionClient.bind(new InetSocketAddress(localPort));
+                    System.out.println("Attempting connection, ip:port " + peerIP + ":" + peerPort);
+                    connectionClient.connect(new InetSocketAddress(peerIP, peerPort), 15 * 1000);
+                }
+
                 //TODO: share keys and verify tokens
                 String initialMessage = "{\"key\": \""+ encypt.getPublicKeyString() + "\", " +
                         "\"token\" : \"" + token +"\"}";
