@@ -107,18 +107,12 @@ public class PeerConnection {
         if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
         this.user = usr;
         this.request = req;
-        System.out.println("Making peer connection \t" + request.targetUser);
-        System.out.printf("user ip address: \t%s\n", this.user.ipAddress);
-        System.out.printf("target ip address: \t%s\n", this.request.targetIP);
-        System.out.printf("ip addresses are the same: \t%b\n", user.ipAddress.equals(request.targetIP));
-        System.out.printf("ip of requesting: \t%s\n", request.requestingIPaddress);
 
         if (request.targetUser.equals(user.username)){
             this.peerIP = request.requestingIPaddress.equals(user.ipAddress) ? request.requestingLocalIPaddress : request.requestingIPaddress;
             //this.peerIP = request.requestingIPaddress;
             this.peerPort = Integer.parseInt(request.requestingPort);
-            System.out.printf("peer ip : \t%s\n", peerIP);
-            System.out.printf("my ip: %s\n", user.privateIPaddress);
+
         }
         //We sent the request
         else{
@@ -126,9 +120,8 @@ public class PeerConnection {
             this.peerIP = request.targetIP.equals(user.ipAddress) ? user.privateIPaddress : request.targetIP;
             this.peerPort = Integer.parseInt(req.targetPort);
             this.isServer = true;
-            System.out.printf("Is server: \t%b\n", this.isServer);
-        }
 
+        }
         this.localPort = Integer.parseInt(user.peerServerPort);
         try {
             this.encypt = AssymEncypt.getAssymEncypt();
