@@ -111,12 +111,15 @@ public class PeerConnection {
         System.out.printf("ip addresses are the same: %b\n", user.ipAddress.equals(request.requestingIPaddress));
 
         if (request.targetUser.equals(user.username)){
-            this.peerIP = request.requestingIPaddress;
+            this.peerIP = request.requestingIPaddress.equals(user.ipAddress) ? user.privateIPaddress : request.requestingIPaddress;
+            //this.peerIP = request.requestingIPaddress;
             this.peerPort = Integer.parseInt(request.requestingPort);
         }
         //We sent the request
         else{
-            this.peerIP = request.targetIP;
+
+            //this.peerIP = request.targetIP;
+            this.peerIP = request.targetIP.equals(user.ipAddress) ? user.privateIPaddress : request.targetIP;
             this.peerPort = Integer.parseInt(req.targetPort);
         }
         this.localPort = Integer.parseInt(user.peerServerPort);
