@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Random;
 
 //Singleton - tracks open connections and sockets
 //  used to provide peer connection with port used to establish IP and port on
@@ -29,12 +30,21 @@ public class ConnectionManager {
     private static Gson gson = new Gson();
     private UserData user = null;
     private ArrayList<Socket> openSockets = new ArrayList<>();
-    private int nextPort = 59870;
+    private int nextPort;
     private Socket nextSocket = null;
 
 
+    private int generateRandomPort(){
+        final int MIN = 25000;
+        final int MAX = 65000;
+        Random rand = new Random();
+        return rand.nextInt((MAX - MIN)) + MIN;
+
+    }
+
     private ConnectionManager(UserData usr){
         user = usr;
+        nextPort = generateRandomPort();
     }
 
     public synchronized int getNextSocket(){
