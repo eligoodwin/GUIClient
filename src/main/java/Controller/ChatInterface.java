@@ -139,6 +139,9 @@ public class ChatInterface {
     void endConnection(){
         if (peer != null){
             System.out.println("Terminating connection in endConnection");
+            if (startupThread.isAlive()){
+                startupThread.interrupt();
+            }
             peer.stopConnection();
         }
     }

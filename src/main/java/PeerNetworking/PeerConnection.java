@@ -398,7 +398,7 @@ public class PeerConnection {
 
     public synchronized void stopConnection(){
         setRunning(false);
-        if (incomingThread.isAlive()){
+        if (incomingThread != null && incomingThread.isAlive()){
                 incomingThread.interrupt();
                 //incomingThread.join();
         }
