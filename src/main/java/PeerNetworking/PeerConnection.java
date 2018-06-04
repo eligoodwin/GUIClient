@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.io.*;
 import java.net.*;
 import java.security.InvalidKeyException;
@@ -104,15 +105,18 @@ public class PeerConnection {
         if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
         this.user = usr;
         this.request = req;
-        System.out.println("Test " + request.targetUser);
-        //Friend sent the request
+        System.out.println("Making peer connection " + request.targetUser);
+        System.out.printf("user ip address: %s\n", this.user.ipAddress);
+        System.out.printf("target ip address: %s\n", this.request.requestingIPaddress);
+        System.out.printf("ip addresses are the same: %b\n", user.ipAddress.equals(request.requestingIPaddress));
+
         if (request.targetUser.equals(user.username)){
             this.peerIP = request.requestingIPaddress;
             this.peerPort = Integer.parseInt(request.requestingPort);
         }
         //We sent the request
         else{
-            this.peerIP = request.targetIP.equals(user.ipAddress) ? user.privateIPaddress : request.targetIP;
+            this.peerIP = request.targetIP;
             this.peerPort = Integer.parseInt(req.targetPort);
         }
         this.localPort = Integer.parseInt(user.peerServerPort);
@@ -256,31 +260,34 @@ public class PeerConnection {
             BufferedReader input = getBuffer(connectionClient);
             while(getRunning()){
                 //TODO: check for ending connection
-                String msg = input.readLine();
+                String msg = null;
                 if(!connectionClient.isConnected()){
                     setRunning(false);
                     //TODO: call something in parentWindow to let user know friend disconnected
                     parentWindow.sendMessageToWindow("Friend disconnected");
                 }
-                else if (parentWindow != null) {
-                    if(friend.friend_name.equals("jadenBot")){
-                        parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
-                    }
-                    else if (msg != null){
-                        ChatMessage message = gson.fromJson(msg, ChatMessage.class);
-                        try {
-                            String decrpytedMessage = encypt.decryptString(message.message);
-                            System.out.println(decrpytedMessage);
-                            parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(decrpytedMessage));
-                        } catch (InvalidKeyException e) {
-                            e.printStackTrace();
-                        } catch (BadPaddingException e) {
-                            e.printStackTrace();
-                        } catch (IllegalBlockSizeException e) {
-                            e.printStackTrace();
-                        }
-                    }//else - not jaden
-                } //else if client is connected && parent not null
+                else {
+                    msg = input.readLine();
+                    if (parentWindow != null) {
+                        if (friend.friend_name.equals("jadenBot")) {
+                            parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
+                        } else if (msg != null) {
+                            System.out.println("Received: " + msg);
+                            ChatMessage message = gson.fromJson(msg, ChatMessage.class);
+                            try {
+                                String decrpytedMessage = encypt.decryptString(message.message);
+                                System.out.println(decrpytedMessage);
+                                parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(decrpytedMessage));
+                            } catch (InvalidKeyException e) {
+                                e.printStackTrace();
+                            } catch (BadPaddingException e) {
+                                e.printStackTrace();
+                            } catch (IllegalBlockSizeException e) {
+                                e.printStackTrace();
+                            }
+                        }//else - not jaden
+                    } //parent not null
+                }//client is connected
             } //while running
         }//try
         catch(IOException e){
