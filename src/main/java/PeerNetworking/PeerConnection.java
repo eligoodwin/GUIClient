@@ -108,6 +108,7 @@ public class PeerConnection {
         this.user = usr;
         this.request = req;
         this.isServer = false;
+
         if (request.targetUser.equals(user.username)){
             this.peerIP = request.requestingIPaddress.equals(user.ipAddress) ? request.requestingLocalIPaddress : request.requestingIPaddress;
             this.peerPort = Integer.parseInt(request.requestingPort);
@@ -123,6 +124,7 @@ public class PeerConnection {
                 this.peerIP = request.targetIP;
             }
             this.peerPort = Integer.parseInt(req.targetPort);
+
         }
         this.localPort = Integer.parseInt(user.peerServerPort);
         try {
@@ -215,7 +217,6 @@ public class PeerConnection {
                 System.out.flush();
             } catch (SocketException s) {
                 s.printStackTrace();
-                return -2;
             } catch (IOException e) {
                 e.printStackTrace();
                 return -1;
