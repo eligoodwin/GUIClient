@@ -123,8 +123,6 @@ public class PeerConnection {
                 this.peerIP = request.targetIP;
             }
             this.peerPort = Integer.parseInt(req.targetPort);
-
-
         }
         this.localPort = Integer.parseInt(user.peerServerPort);
         try {
