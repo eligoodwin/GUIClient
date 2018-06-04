@@ -107,7 +107,7 @@ public class PeerConnection {
         this.request = req;
         System.out.println("Making peer connection " + request.targetUser);
         System.out.printf("user ip address: %s\n", this.user.ipAddress);
-        System.out.printf("target ip address: %s\n", this.request.requestingIPaddress);
+        System.out.printf("target ip address: %s\n", this.request.targetIP);
         System.out.printf("ip addresses are the same: %b\n", user.ipAddress.equals(request.requestingIPaddress));
 
         if (request.targetUser.equals(user.username)){
