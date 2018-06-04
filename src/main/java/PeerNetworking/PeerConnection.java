@@ -107,10 +107,11 @@ public class PeerConnection {
         if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
         this.user = usr;
         this.request = req;
-        System.out.println("Making peer connection " + request.targetUser);
-        System.out.printf("user ip address: %s\n", this.user.ipAddress);
-        System.out.printf("target ip address: %s\n", this.request.targetIP);
-        System.out.printf("ip addresses are the same: %b\n", user.ipAddress.equals(request.requestingIPaddress));
+        System.out.println("Making peer connection \t" + request.targetUser);
+        System.out.printf("user ip address: \t%s\n", this.user.ipAddress);
+        System.out.printf("target ip address: \t%s\n", this.request.targetIP);
+        System.out.printf("ip addresses are the same: \t%b\n", user.ipAddress.equals(request.targetIP));
+        System.out.printf("ip of requesting: \t%s\n", request.requestingIPaddress);
 
         if (request.targetUser.equals(user.username)){
             this.peerIP = request.requestingIPaddress.equals(user.ipAddress) ? user.privateIPaddress : request.requestingIPaddress;
@@ -123,6 +124,7 @@ public class PeerConnection {
             this.peerIP = request.targetIP.equals(user.ipAddress) ? user.privateIPaddress : request.targetIP;
             this.peerPort = Integer.parseInt(req.targetPort);
             this.isServer = true;
+            System.out.printf("Is server: \t%b\n", this.isServer);
         }
         this.localPort = Integer.parseInt(user.peerServerPort);
         try {
@@ -181,6 +183,7 @@ public class PeerConnection {
                     connectionListener = new ServerSocket();
                     connectionListener.setReuseAddress(true);
                     connectionListener.bind(new InetSocketAddress(localPort));
+                    System.out.printf("making server on: %d", connectionListener.getLocalPort());
                     connectionClient = connectionListener.accept();
                 }
                 else{

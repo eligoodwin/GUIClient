@@ -174,7 +174,7 @@ public class OkClient {
         Response response = client.newCall(request).execute();
         int status = response.code();
         String res = response.body().string();
-        System.out.println(res); //TODO: trace
+//        System.out.println(res); //TODO: trace
         if (status >= 200 && status < 400) {
             ResponseArray resObj = gson.fromJson(res, ResponseArray.class);
             res = resObj.status;
@@ -217,7 +217,7 @@ public class OkClient {
         ChatRequest chatRequest = new ChatRequest(current, friendName);
         chatRequest.API_token = API_TOKEN;
         String json = gson.toJson(chatRequest);
-        System.out.println("Chat request: " + json);
+        //System.out.println("Chat request: " + json);
         RequestBody body = RequestBody.create(JSON, json);
         Request request = new Request.Builder()
                 .addHeader("Authorization", "Bearer" + current.token)
@@ -230,8 +230,8 @@ public class OkClient {
             String res = response.body().string();
             ResponseObj resObj = gson.fromJson(res, ResponseObj.class);
             ChatRequest req = gson.fromJson(resObj.message, ChatRequest.class);
-            System.out.println("Chat request res: " + res);
-            System.out.println("ChatRequest target: " + req.targetUser);
+//            System.out.println("Chat request res: " + res);
+//            System.out.println("ChatRequest target: " + req.targetUser);
             return req;
         }
         return null;

@@ -114,14 +114,14 @@ public class FriendsController{
                 }
                 //pending
                 else if (friendStatus == 1) {
-                    System.out.println("Found friend with status 1");
+
                     this.setContextMenu(pendingMenu);
                     this.textProperty().bind(Bindings.format("Request from %s", friend.friend_name));
                     this.setStyle("-fx-font-style: italic");
                 }
                 //accepted friend
                 else if (friendStatus == 2) {
-                    System.out.println("Found friend with status 2");
+
                     if (friend.friend_name.equals("jadenBot")){
                         this.setContextMenu(null);
                     }
@@ -137,7 +137,7 @@ public class FriendsController{
                     int index = findFriendIndex(friend);
                     if (index >= 0) fList.remove(index);
                     //friendsList.refresh();
-                    System.out.println("Request status: " + friend.requestStatus);
+
                 }
                 friendMutex.unlock();
             }
@@ -268,7 +268,6 @@ public class FriendsController{
         catch(IOException e){
             e.printStackTrace();
         }
-        System.out.println("Accepted: " + friend.friend_name);
     }
 
     private void rejectFriend(FriendData friend){
@@ -282,7 +281,6 @@ public class FriendsController{
         catch(IOException e){
             e.printStackTrace();
         }
-        System.out.println("Rejected: " + friend.friend_name);
     }
 
     private void blockFriend(FriendData friend){
@@ -303,7 +301,6 @@ public class FriendsController{
 
     public void requestChat(ActionEvent actionEvent){
         if(getHandlingRequest()){
-            System.out.println("Handle existing chat requests before making a new one.");
             return;
         }
         setHandlingRequest(true);
