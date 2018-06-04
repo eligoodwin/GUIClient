@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -174,6 +175,15 @@ public class FriendsController{
         client = new OkClient();
     }
 
+    //source: https://stackoverflow.com/questions/2784514/sort-arraylist-of-custom-objects-by-property?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+    public class FriendComparator implements Comparator<FriendData> {
+        @Override
+        public int compare(FriendData frnd1, FriendData frnd2){
+            //source: https://stackoverflow.com/questions/11176227/simple-way-to-sort-strings-in-the-case-sensitive-alphabetical-order
+            return frnd1.friend_name.compareTo(frnd2.friend_name);
+        }
+    }
+
     synchronized int updateFriendsList(){
         try {
             if (!friendLock.tryLock(500, TimeUnit.MILLISECONDS)){
@@ -187,17 +197,33 @@ public class FriendsController{
         if (getUser() == null) return -1;
         if (fList.size() != 0) fList.clear();
         if (friendsList != null) friendsList.getItems().clear();
-        if (friends != null) friends.clear();
+        ArrayList<FriendData> tempFriends = new ArrayList<>();
         try {
-            String res = client.getFriends(getUser(), friends);
+            String res = client.getFriends(getUser(), tempFriends);
         }
         catch(IOException e){
             e.printStackTrace();
         }
         //source: https://stackoverflow.com/questions/20936101/get-listcell-via-listview
-        if (friends.size() > 0){
-            //TODO: may need to remove blocked friends here
-            fList.addAll(friends);
+        if (tempFriends.size() > 0){
+            for(FriendData frnd : tempFriends) {
+                FriendData existingFriend = findFriend(frnd.friend_name);
+                if (existingFriend != null){
+                    //if status changed
+                    if (existingFriend.requestStatus == frnd.requestStatus) continue;
+                    else {
+                        //remove old friend
+                        int index = findFriendIndex(existingFriend);
+                        if (index >= 0) fList.remove(index);
+                        //add new friend
+                        fList.add(frnd);
+                    }
+                }
+                else{
+                    fList.add(frnd);
+                }
+            }
+            fList.sort(new FriendComparator());
             friendsList.setItems(fList);
             friendsList.setCellFactory( new Callback<ListView<FriendData>, ListCell<FriendData>>() {
                 @Override
@@ -206,7 +232,7 @@ public class FriendsController{
                     return cell;
                 }
             });
-            friendsList.refresh();
+            //friendsList.refresh();
         }
         friendLock.unlock();
         return 0;
