@@ -114,9 +114,11 @@ public class PeerConnection {
         System.out.printf("ip of requesting: \t%s\n", request.requestingIPaddress);
 
         if (request.targetUser.equals(user.username)){
-            this.peerIP = request.requestingIPaddress.equals(user.ipAddress) ? user.privateIPaddress : request.requestingIPaddress;
+            this.peerIP = request.requestingIPaddress.equals(user.ipAddress) ? request.requestingLocalIPaddress : request.requestingIPaddress;
             //this.peerIP = request.requestingIPaddress;
             this.peerPort = Integer.parseInt(request.requestingPort);
+            System.out.printf("peer ip : \t%s\n", peerIP);
+            System.out.printf("my ip: %s\n", user.privateIPaddress);
         }
         //We sent the request
         else{
@@ -126,6 +128,7 @@ public class PeerConnection {
             this.isServer = true;
             System.out.printf("Is server: \t%b\n", this.isServer);
         }
+
         this.localPort = Integer.parseInt(user.peerServerPort);
         try {
             this.encypt = AssymEncypt.getAssymEncypt();
@@ -403,10 +406,14 @@ public class PeerConnection {
                 incomingThread.interrupt();
                 //incomingThread.join();
         }
+
         if (connectionClient != null){
             try {
                 if(!connectionClient.isClosed()) {
                     connectionClient.close();
+                    if(isServer){
+                        connectionListener.close();
+                    }
                 }
             }
             catch(IOException e){
