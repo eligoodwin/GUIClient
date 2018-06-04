@@ -290,9 +290,7 @@ public class PeerConnection {
                 else {
                     msg = input.readLine();
                     if (parentWindow != null) {
-                        if (friend.friend_name.equals("jadenBot")) {
-                            parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
-                        } else if (msg != null) {
+                        if (msg != null) {
                             System.out.println("Received: " + msg);
                             ChatMessage message = gson.fromJson(msg, ChatMessage.class);
                             try {
@@ -306,7 +304,7 @@ public class PeerConnection {
                             } catch (IllegalBlockSizeException e) {
                                 e.printStackTrace();
                             }
-                        }//else - not jaden
+                        }//if msg != null
                     } //parent not null
                 }//client is connected
             } //while running
