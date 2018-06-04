@@ -2,6 +2,7 @@ package PeerNetworking;
 
 import QueryObjects.STUNRegistration;
 import QueryObjects.UserData;
+import Util.JSONhelper;
 import com.google.gson.Gson;
 
 import java.io.*;
@@ -53,30 +54,6 @@ public class ConnectionManager {
         nextPort++;
     }
 
-    //will need to be modified to send JWT with user
-    public int connectToStun(){
-        boolean badPort = true;
-        do{
-            try {
-                nextSocket = new Socket();
-                nextSocket.setReuseAddress(true);
-                nextSocket.bind(new InetSocketAddress(nextPort));
-                nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
-                STUNRegistration validation = new STUNRegistration(user, API_TOKEN, nextPort);
-                String message = gson.toJson(validation);
-                sendMessage(message);
-//                String response = getMessage(); //? response from stun server ?
-////                String response = "nope";
-//                System.out.printf("RESPONSE FROM STUN: %s\n", response);
-                badPort = false;
-                nextSocket.close();
-            } catch (IOException e) {
-                System.out.println("Could not connect to STUN server on port incrementing");
-                getNewPort();
-            }
-        }while(badPort);
-        return nextPort;
-    }
 
     private void findNextSocket() throws SocketException {
         if (nextPort > 65535){
@@ -97,7 +74,11 @@ public class ConnectionManager {
                     System.out.println("Connected to STUN on port: " + nextPort);
                     res = getMessage();
                     //parse message
-
+                    JSONhelper jHelper = new JSONhelper();
+                    jHelper.parseBody(res);
+                    String ipAddressFromStun = jHelper.getValueFromKey("message");
+                    System.out.printf("IP address from server: %s\n", ipAddressFromStun);
+                    user.ipAddress = ipAddressFromStun;
 
                 }
                 catch(SocketTimeoutException e){
