@@ -97,7 +97,7 @@ public class ConnectionManager {
                     System.out.println("Connected to STUN on port: " + nextPort);
                     res = getMessage();
                     //parse message
-
+                    user.ipAddress = res;
 
                 }
                 catch(SocketTimeoutException e){
