@@ -85,41 +85,45 @@ public class PeerConnection {
         }
     }
 
-    public PeerConnection(UserData usr, FriendData frnd) throws IOException {
-        if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
-        this.user = usr;
-        this.friend = frnd;
-        this.peerIP = friend.ipAddress;
-        this.localPort = Integer.parseInt(user.peerServerPort);
-        this.peerPort = Integer.parseInt(friend.peerServerPort);
-        try {
-            this.encypt = AssymEncypt.getAssymEncypt();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            System.exit(1);
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-    }
+//    public PeerConnection(UserData usr, FriendData frnd) throws IOException {
+//        if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
+//        this.user = usr;
+//        this.friend = frnd;
+//        this.peerIP = friend.ipAddress;
+//        this.localPort = Integer.parseInt(user.peerServerPort);
+//        this.peerPort = Integer.parseInt(friend.peerServerPort);
+//        try {
+//            this.encypt = AssymEncypt.getAssymEncypt();
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//            System.exit(1);
+//        } catch (NoSuchPaddingException e) {
+//            e.printStackTrace();
+//            System.exit(1);
+//        }
+//    }
 
     public PeerConnection(UserData usr, ChatRequest req) throws IOException {
         if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
         this.user = usr;
         this.request = req;
-
+        this.isServer = false;
         if (request.targetUser.equals(user.username)){
             this.peerIP = request.requestingIPaddress.equals(user.ipAddress) ? request.requestingLocalIPaddress : request.requestingIPaddress;
-            //this.peerIP = request.requestingIPaddress;
             this.peerPort = Integer.parseInt(request.requestingPort);
 
         }
         //We sent the request
         else{
-            //this.peerIP = request.targetIP;
-            this.peerIP = request.targetIP.equals(user.ipAddress) ? user.privateIPaddress : request.targetIP;
+            if(request.targetIP.equals(user.ipAddress)){
+                this.peerIP = user.privateIPaddress;
+                this.isServer = true;
+            }
+            else{
+                this.peerIP = request.targetIP;
+            }
             this.peerPort = Integer.parseInt(req.targetPort);
-            this.isServer = true;
+
 
         }
         this.localPort = Integer.parseInt(user.peerServerPort);

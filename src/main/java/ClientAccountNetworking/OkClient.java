@@ -245,7 +245,6 @@ public class OkClient {
                 .build();
         Response response = client.newCall(request).execute();
         String res = response.body().string();
-        System.out.println(res);
         int resStatus = response.code();
         if (resStatus >= 200 && resStatus < 400) {
             //System.out.println("Chat requests: " + res);
