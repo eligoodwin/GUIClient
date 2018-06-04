@@ -7,9 +7,6 @@ import QueryObjects.ChatRequest;
 import QueryObjects.FriendData;
 import QueryObjects.UserData;
 import Util.JSONhelper;
-import com.google.common.util.concurrent.SimpleTimeLimiter;
-import com.google.common.util.concurrent.TimeLimiter;
-import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.gson.Gson;
 
 import javax.crypto.BadPaddingException;
@@ -21,7 +18,6 @@ import java.net.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class PeerConnection {
@@ -37,12 +33,14 @@ public class PeerConnection {
     private ChatRequest request = null;
     private boolean running = true;
     private Socket connectionClient = null;
-    private ServerSocket sock = null;
+    private ServerSocket connectionListener = null;
     private Thread incomingThread = null;
     private Thread testServer;
     private String peerIP;
     private ChatInterface parentWindow = null;
     private AssymEncypt encypt;
+
+    private boolean isServer;
 
     public synchronized UserData getUser(){return user;}
 
@@ -69,9 +67,9 @@ public class PeerConnection {
     }
 
     private void startServer(){
-        if (sock == null) return;
+        if (connectionListener == null) return;
         try {
-            connectionClient = sock.accept();
+            connectionClient = connectionListener.accept();
             incomingThread = new Thread(this::startReceiving);
             incomingThread.setDaemon(true);
             incomingThread.start();
@@ -80,7 +78,7 @@ public class PeerConnection {
             e.printStackTrace();
         }
         try {
-            sock.close();
+            connectionListener.close();
         }
         catch(IOException e){
             e.printStackTrace();
@@ -109,17 +107,20 @@ public class PeerConnection {
         if (manager == null) manager = ConnectionManager.getConnectionManager(usr);
         this.user = usr;
         this.request = req;
-        System.out.println("Making peer connection " + request.targetUser);
 
         if (request.targetUser.equals(user.username)){
-            this.peerIP = request.requestingIPaddress;
+            this.peerIP = request.requestingIPaddress.equals(user.ipAddress) ? request.requestingLocalIPaddress : request.requestingIPaddress;
+            //this.peerIP = request.requestingIPaddress;
             this.peerPort = Integer.parseInt(request.requestingPort);
+
         }
         //We sent the request
         else{
-
-            this.peerIP = request.targetIP;
+            //this.peerIP = request.targetIP;
+            this.peerIP = request.targetIP.equals(user.ipAddress) ? user.privateIPaddress : request.targetIP;
             this.peerPort = Integer.parseInt(req.targetPort);
+            this.isServer = true;
+
         }
         this.localPort = Integer.parseInt(user.peerServerPort);
         try {
@@ -131,18 +132,17 @@ public class PeerConnection {
             e.printStackTrace();
             System.exit(1);
         }
-
     }
 
     //This is used only for debugging on local networks
     public PeerConnection(int test){
         user = new UserData();
         localTestPort = test;
-        sock = null;
+        connectionListener = null;
         if (localTestPort > 65535) return;
         while (true) {
             try {
-                sock = new ServerSocket(localTestPort);
+                connectionListener = new ServerSocket(localTestPort);
                 break;
             }
             catch(IOException e){
@@ -169,12 +169,28 @@ public class PeerConnection {
         int attemptCount = 0;
         do {
             try {
-                connectionClient = new Socket();
-                connectionClient.setReuseAddress(true);
-                System.out.println("Connect Punch, binding port: " + localPort);
-                connectionClient.bind(new InetSocketAddress(localPort));
-                System.out.println("Attempting connection, ip:port " + peerIP + ":" + peerPort);
-                connectionClient.connect(new InetSocketAddress(peerIP, peerPort), 15 * 1000);
+                if(isServer){
+                    /*
+                    *   creating server socket in case the user is server. This only occurs when
+                    *   both users are behind the same nat. The requesting user is then turned
+                    *   into a server that the other peer connects to.
+                    * */
+
+                    connectionListener = new ServerSocket();
+                    connectionListener.setReuseAddress(true);
+                    connectionListener.bind(new InetSocketAddress(localPort));
+                    System.out.printf("making server on: %d", connectionListener.getLocalPort());
+                    connectionClient = connectionListener.accept();
+                }
+                else{
+                    connectionClient = new Socket();
+                    connectionClient.setReuseAddress(true);
+                    System.out.println("Connect Punch, binding port: " + localPort);
+                    connectionClient.bind(new InetSocketAddress(localPort));
+                    System.out.println("Attempting connection, ip:port " + peerIP + ":" + peerPort);
+                    connectionClient.connect(new InetSocketAddress(peerIP, peerPort), 15 * 1000);
+                }
+
                 //TODO: share keys and verify tokens
                 String initialMessage = "{\"key\": \""+ encypt.getPublicKeyString() + "\", " +
                         "\"token\" : \"" + token +"\"}";
@@ -253,37 +269,25 @@ public class PeerConnection {
             //TODO: this is probably not a good hack - prevents trying to send
             //  messages to windows that don't yet exist
             Thread.sleep(1000);
-            parentWindow.sendMessageToWindow("#Starting reception\n\n");
+            parentWindow.sendMessageToWindow("Starting reception\n");
         }
         catch(InterruptedException e){
             e.printStackTrace();
         }
         try {
             BufferedReader input = getBuffer(connectionClient);
-            TimeLimiter timeLimiter = new SimpleTimeLimiter();
             while(getRunning()){
                 //TODO: check for ending connection
                 String msg = null;
                 if(!connectionClient.isConnected()){
                     setRunning(false);
                     //TODO: call something in parentWindow to let user know friend disconnected
-                    parentWindow.sendMessageToWindow("\n#Friend disconnected");
+                    parentWindow.sendMessageToWindow("Friend disconnected");
                 }
                 else {
-                    //source: https://stackoverflow.com/questions/6792835/how-do-you-set-a-timeout-on-bufferedreader-and-printwriter-in-java-1-4
-                    //call readline with timeout
-                    try {
-                        msg = timeLimiter.callWithTimeout(input::readLine, 5, TimeUnit.SECONDS, true);
-                    }
-                    catch (TimeoutException | UncheckedTimeoutException e){
-                        msg = null;
-                    }
-                    catch(Exception e){
-                        e.printStackTrace();
-                        msg = null;
-                    }
+                    msg = input.readLine();
                     if (parentWindow != null) {
-                        if (friend.friend_name.equals("jadenBot") && msg != null) {
+                        if (friend.friend_name.equals("jadenBot")) {
                             parentWindow.sendMessageToWindow(parentWindow.userIsNotSource(msg));
                         } else if (msg != null) {
                             System.out.println("Received: " + msg);
@@ -395,10 +399,14 @@ public class PeerConnection {
                 incomingThread.interrupt();
                 //incomingThread.join();
         }
+
         if (connectionClient != null){
             try {
                 if(!connectionClient.isClosed()) {
                     connectionClient.close();
+                    if(isServer){
+                        connectionListener.close();
+                    }
                 }
             }
             catch(IOException e){

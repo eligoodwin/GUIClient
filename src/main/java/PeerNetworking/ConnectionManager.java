@@ -54,9 +54,7 @@ public class ConnectionManager {
             e.printStackTrace();
             return -1;
         }
-        int temp = nextPort;
-        nextPort++; //increment to avoid conflicts
-        return temp;
+        return nextPort++;
     }
 
     private void getNewPort(){
