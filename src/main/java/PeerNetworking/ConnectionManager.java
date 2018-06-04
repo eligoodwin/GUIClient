@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Random;
 
 //Singleton - tracks open connections and sockets
 //  used to provide peer connection with port used to establish IP and port on
@@ -29,12 +30,20 @@ public class ConnectionManager {
     private static Gson gson = new Gson();
     private UserData user = null;
     private ArrayList<Socket> openSockets = new ArrayList<>();
-    private int nextPort = 59870;
+    private int nextPort;
     private Socket nextSocket = null;
 
 
+    private int generateRandomPort(){
+        final int MIN = 20000;
+        final int MAX = 65000;
+        Random rand = new Random();
+        return rand.nextInt((MAX - MIN)) + MIN;
+    }
+
     private ConnectionManager(UserData usr){
         user = usr;
+        nextPort = generateRandomPort();
     }
 
     public synchronized int getNextSocket(){
@@ -54,30 +63,6 @@ public class ConnectionManager {
         nextPort++;
     }
 
-    //will need to be modified to send JWT with user
-    public int connectToStun(){
-        boolean badPort = true;
-        do{
-            try {
-                nextSocket = new Socket();
-                nextSocket.setReuseAddress(true);
-                nextSocket.bind(new InetSocketAddress(nextPort));
-                nextSocket.connect(new InetSocketAddress(STUN_ADDRESS, STUN_PORT), STUN_TIMEOUT);
-                STUNRegistration validation = new STUNRegistration(user, API_TOKEN, nextPort);
-                String message = gson.toJson(validation);
-                sendMessage(message);
-//                String response = getMessage(); //? response from stun server ?
-////                String response = "nope";
-//                System.out.printf("RESPONSE FROM STUN: %s\n", response);
-                badPort = false;
-                nextSocket.close();
-            } catch (IOException e) {
-                System.out.println("Could not connect to STUN server on port incrementing");
-                getNewPort();
-            }
-        }while(badPort);
-        return nextPort;
-    }
 
     private void findNextSocket() throws SocketException {
         if (nextPort > 65535){
@@ -93,13 +78,16 @@ public class ConnectionManager {
                 String json = gson.toJson(validation);
                 System.out.println(json);
                 sendMessage(json);
-
+                String res = "";
                 try {
-                    String response = getMessage();
+                    System.out.println("Connected to STUN on port: " + nextPort);
+                    res = getMessage();
+                    //parse message
                     JSONhelper jHelper = new JSONhelper();
-                    jHelper.parseBody(response);
-                    String potentialIP = jHelper.getValueFromKey("message");
-                    System.out.printf("IP FROM STUN: %s\n", potentialIP);
+                    jHelper.parseBody(res);
+                    String ipAddressFromStun = jHelper.getValueFromKey("message");
+                    System.out.printf("IP address from server: %s\n", ipAddressFromStun);
+                    user.ipAddress = ipAddressFromStun;
 
                 }
                 catch(SocketTimeoutException e){
@@ -109,7 +97,7 @@ public class ConnectionManager {
                     throw new SocketException();
                 }
                 nextSocket.close();
-
+                System.out.println("Good STUN Response:" + res);
                 return;
             }
             catch(IOException e){
