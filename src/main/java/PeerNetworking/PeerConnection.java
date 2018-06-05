@@ -145,6 +145,8 @@ public class PeerConnection {
                 System.out.flush();
             } catch (SocketException s) {
                 s.printStackTrace();
+            } catch (SocketTimeoutException to){
+                to.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
                 return -1;
