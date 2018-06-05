@@ -81,13 +81,22 @@ public class OkClient {
         int resStatus = response.code();
         if (resStatus >= 200 && resStatus < 400) {
             ResponseObj resObj = gson.fromJson(json, ResponseObj.class);
-            UserData tempUser = gson.fromJson(resObj.message.getAsJsonObject("userDetails"), UserData.class);
-            user.token = resObj.message.get("token").getAsString();
-            user.id = tempUser.id;
-            return 0;
+            String ret = resObj.status;
+            if(ret.equals(GOOD_RES)) {
+                UserData tempUser = gson.fromJson(resObj.message.getAsJsonObject("userDetails"), UserData.class);
+                user.token = resObj.message.get("token").getAsString();
+                user.id = tempUser.id;
+                return 0;
+            }
+            else {
+                String resMsg = resObj.message.get("response").getAsString();
+                if (resMsg.equals("username taken")) {
+                    return 1;
+                }
+            }
         }
         System.out.println("Error in addUser");
-        return 1;
+        return -1;
     }
 
     public String checkToken(UserData user) throws IOException{

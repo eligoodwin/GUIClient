@@ -5,11 +5,13 @@ import PeerNetworking.ConnectionManager;
 import QueryObjects.UserData;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -17,17 +19,29 @@ import java.io.IOException;
 public class AccountCreationController {
     private OkClient client = new OkClient();
     @FXML
-    private TextField createPassword;
+    private PasswordField createPassword;
     @FXML
     private TextField createUsername;
     @FXML
-    private TextField createEmail;
+    private PasswordField reTypePassword;
+    @FXML
+    private Text createErrorText;
 
     public void createAccount(ActionEvent actionEvent) {
         UserData user = new UserData();
         user.username = createUsername.getText();
-        user.password = createPassword.getText();
-        user.email = createEmail.getText();
+        String newPass = createPassword.getText();
+        String repassword = reTypePassword.getText();
+        if (newPass.length() < 5){
+            createErrorText.setText("Password must be 5 or more characters");
+            return;
+        }
+        else if (!newPass.equals(repassword)){
+            createErrorText.setText("Passwords do not match");
+            return;
+        }
+        user.password = newPass;
+        user.email = "default@notimplemented.com";
         int check = -1;
         try {
             check = client.addUser(user);
@@ -36,6 +50,10 @@ public class AccountCreationController {
             System.out.println("Could not create user... exception encountered");
         }
         //user created succesfully
+        if (check == 1){
+            createErrorText.setText("Username is taken");
+            return;
+        }
         if (check == 0) {
             System.out.printf("User created with id: %s%n", user.id);
             Node source = (Node) actionEvent.getSource();
