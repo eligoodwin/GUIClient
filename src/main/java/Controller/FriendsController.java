@@ -78,23 +78,25 @@ public class FriendsController{
     }
 
     class FriendDataCell extends ListCell<FriendData>{
+        public FriendData displayFriend;
         @Override
         protected void updateItem(FriendData friend, boolean empty) {
             super.updateItem(friend, empty);
             if (friend != null) {
+                displayFriend = friend;
                 ContextMenu blockMenu = new ContextMenu();
                 MenuItem block = new MenuItem();
                 block.setText("Block User");
-                block.setOnAction(event -> blockFriend(this.getItem()));
+                block.setOnAction(event -> blockFriend(this.displayFriend));
                 blockMenu.getItems().add(block);
 
                 ContextMenu pendingMenu = new ContextMenu();
                 MenuItem accept = new MenuItem();
                 accept.setText("Accept Request");
-                accept.setOnAction(event -> acceptFriend(this.getItem()));
+                accept.setOnAction(event -> acceptFriend(this.displayFriend));
                 MenuItem reject = new MenuItem();
                 reject.setText("Reject Request");
-                reject.setOnAction(event -> rejectFriend(this.getItem()));
+                reject.setOnAction(event -> rejectFriend(this.displayFriend));
                 pendingMenu.getItems().addAll(accept, reject);
 
                 if (friend == null) {
