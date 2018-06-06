@@ -16,6 +16,7 @@ public class Main extends Application {
         System.out.println(getClass().getResource("/fxml/splash.fxml"));
         Parent root = FXMLLoader.load(getClass().getResource("/fxml/splash.fxml"));
         primaryStage.setScene(new Scene(root));
+        primaryStage.setTitle("BLACK(c)HAT");
         primaryStage.show();
 
         //closes down the program completely when the program exits -- still need to fix for chat client

@@ -73,6 +73,7 @@ public class LogonController {
         Parent root = loader.<Parent>load();
         SplashController controller = loader.<SplashController>getController();
         Scene splashScene = new Scene(root);
+        theStage.setTitle("BLACK(c)HAT");
         theStage.setScene(splashScene);
     }
 }

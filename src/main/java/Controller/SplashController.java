@@ -22,6 +22,7 @@ public class SplashController {
         Parent root = FXMLLoader.load(getClass().getResource("/fxml/createAccount.fxml"));
         Scene logonScene = new Scene(root);
         theStage.setScene(logonScene);
+        theStage.setTitle("BLACK(c)HAT");
         System.out.println("account creation was clicked");
 
     }
@@ -32,6 +33,7 @@ public class SplashController {
         Parent root = FXMLLoader.load(getClass().getResource("/fxml/logon.fxml"));
         Scene logonScene = new Scene(root);
         theStage.setScene(logonScene);
+        theStage.setTitle("BLACK(c)HAT");
         System.out.println("logon was clicked");
     }
 }

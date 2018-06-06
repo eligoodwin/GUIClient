@@ -202,7 +202,7 @@ public class PeerConnection {
             //TODO: this is probably not a good hack - prevents trying to send
             //  messages to windows that don't yet exist
             Thread.sleep(1000);
-            parentWindow.sendMessageToWindow("Starting reception\n");
+            parentWindow.sendMessageToWindow("# Encrypted Chat Ready\n");
         }
         catch(InterruptedException e){
             e.printStackTrace();
@@ -215,7 +215,7 @@ public class PeerConnection {
                 if(!connectionClient.isConnected()){
                     setRunning(false);
                     //TODO: call something in parentWindow to let user know friend disconnected
-                    parentWindow.sendMessageToWindow("Friend disconnected");
+                    parentWindow.sendMessageToWindow("# Friend disconnected");
                 }
                 else {
                     msg = input.readLine();

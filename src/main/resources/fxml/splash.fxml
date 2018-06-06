@@ -7,7 +7,7 @@
 <Pane maxHeight="200" maxWidth="400" prefHeight="200" prefWidth="400" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.SplashController">
    <children>
 
-       <Text layoutX="134.0" layoutY="60.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Welcome to Chat Fun" />
+       <Text layoutX="134.0" layoutY="60.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Welcome to BLACK(c)HAT" />
        <Button layoutX="143.0" layoutY="100.0" prefHeight="27.0" prefWidth="114.0" mnemonicParsing="false" text="Create Account" onAction="#gotoAccountCreation"/>
        <Button layoutX="143.0" layoutY="140.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="114.0" text="Sign In" onAction="#logon" />
    </children>
